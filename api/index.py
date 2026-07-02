@@ -2,6 +2,7 @@
 Vercel Serverless Entry Point — FastAPI + PostgreSQL (Supabase)
 """
 import sys, os
+from functools import lru_cache
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -21,7 +22,9 @@ if not (os.environ.get("DATABASE_URL") or os.environ.get("SUPABASE_PASSWORD")):
     if os.environ.get("VERCEL") or not os.access(ROOT, os.W_OK):
         _db.DB_PATH = "/tmp/tax_compliance.db"
 
-_db.init()
+if os.environ.get("VERCEL") and _db.USE_POSTGRES:
+    os.environ.setdefault("SKIP_DB_DDL", "1")
+    os.environ.setdefault("SKIP_DB_SEED", "1")
 
 from fastapi import FastAPI, Response
 from fastapi.responses import HTMLResponse, FileResponse
@@ -40,6 +43,10 @@ app.include_router(portal_router)
 
 STATIC = os.path.join(ROOT, "static")
 
+@app.on_event("startup")
+def _startup():
+    _db.init()
+
 @app.get("/static/{filename:path}")
 def static_file(filename: str):
     path = os.path.join(STATIC, filename)
@@ -50,6 +57,7 @@ def static_file(filename: str):
              "jpg":"image/jpeg","svg":"image/svg+xml","ico":"image/x-icon"}
     return FileResponse(path, media_type=types.get(ext, "application/octet-stream"))
 
+@lru_cache(maxsize=16)
 def _page(name):
     with open(os.path.join(STATIC, name), encoding="utf-8") as f:
         return f.read()

@@ -665,19 +665,38 @@ def get_contracts(_auth=Depends(require_read)):
     db = conn()
     try:
         contracts = db.execute("SELECT * FROM contracts ORDER BY due_date").fetchall()
+        if not contracts:
+            return []
+
+        contract_ids = [c["id"] for c in contracts]
+        in_clause = p(len(contract_ids))
+
+        payments_rows = db.execute(
+            f"SELECT * FROM payments WHERE contract_id IN ({in_clause}) ORDER BY pay_date DESC",
+            tuple(contract_ids),
+        ).fetchall()
+        sums_rows = db.execute(
+            f"""SELECT contract_id, COALESCE(SUM(amount),0) as total
+                FROM payments
+                WHERE contract_id IN ({in_clause})
+                GROUP BY contract_id""",
+            tuple(contract_ids),
+        ).fetchall()
+
+        paid_by_contract = {r["contract_id"]: float(r["total"] or 0) for r in sums_rows}
+        payments_by_contract = {}
+        for pr in payments_rows:
+            payments_by_contract.setdefault(pr["contract_id"], []).append(dict(pr))
+
         result = []
         for c in contracts:
-            paid = db.execute(
-                f"SELECT COALESCE(SUM(amount),0) as total FROM payments WHERE contract_id={ph()}", (c['id'],)
-            ).fetchone()['total']
-            payments = db.execute(
-                f"SELECT * FROM payments WHERE contract_id={ph()} ORDER BY pay_date DESC", (c['id'],)
-            ).fetchall()
+            paid = float(paid_by_contract.get(c["id"], 0))
             row = dict(c)
-            row['paid_amount'] = float(paid or 0)
-            row['remaining']   = float(c['agreed_amount'] or 0) - float(paid or 0)
-            row['payments']    = [dict(p) for p in payments]
+            row["paid_amount"] = paid
+            row["remaining"] = float(c["agreed_amount"] or 0) - paid
+            row["payments"] = payments_by_contract.get(c["id"], [])
             result.append(row)
+
         return result
     finally:
         db.close()
@@ -904,13 +923,20 @@ def matching_dashboard(_auth=Depends(require_read)):
     try:
         today       = date.today().isoformat()
         month_start = date.today().replace(day=1).isoformat()
-        total       = db.execute("SELECT COUNT(*) as c FROM balance_sessions").fetchone()['c']
-        today_count = db.execute(f"SELECT COUNT(*) as c FROM balance_sessions WHERE curr_date={ph()}", (today,)).fetchone()['c']
-        month_count = db.execute(f"SELECT COUNT(*) as c FROM balance_sessions WHERE curr_date>={ph()}", (month_start,)).fetchone()['c']
-        matched     = db.execute(f"SELECT COUNT(*) as c FROM balance_sessions WHERE match_status={ph()}", ('متطابقة',)).fetchone()['c']
-        has_diff    = db.execute(f"SELECT COUNT(*) as c FROM balance_sessions WHERE match_status={ph()}", ('يوجد فرق',)).fetchone()['c']
-        needs_rev   = db.execute(f"SELECT COUNT(*) as c FROM balance_sessions WHERE match_status={ph()}", ('تحتاج مراجعة',)).fetchone()['c']
-        total_diff  = db.execute(f"SELECT COALESCE(SUM(ABS(diff_amount)),0) as s FROM balance_sessions WHERE match_status!={ph()}", ('متطابقة',)).fetchone()['s']
+        stats_row = db.execute(
+            f"""
+            SELECT
+                COUNT(*) as total,
+                SUM(CASE WHEN curr_date={ph()} THEN 1 ELSE 0 END) as today,
+                SUM(CASE WHEN curr_date>={ph()} THEN 1 ELSE 0 END) as month,
+                SUM(CASE WHEN match_status={ph()} THEN 1 ELSE 0 END) as matched,
+                SUM(CASE WHEN match_status={ph()} THEN 1 ELSE 0 END) as has_diff,
+                SUM(CASE WHEN match_status={ph()} THEN 1 ELSE 0 END) as needs_review,
+                COALESCE(SUM(CASE WHEN match_status!={ph()} THEN ABS(COALESCE(diff_amount,0)) ELSE 0 END),0) as total_diff_amount
+            FROM balance_sessions
+            """,
+            (today, month_start, "متطابقة", "يوجد فرق", "تحتاج مراجعة", "متطابقة"),
+        ).fetchone()
 
         top_devices = db.execute("""
             SELECT d.name, d.device_uid, COUNT(*) as diff_count,
@@ -940,9 +966,15 @@ def matching_dashboard(_auth=Depends(require_read)):
         """).fetchall()
 
         return {
-            "stats": {"total": total, "today": today_count, "month": month_count,
-                      "matched": matched, "has_diff": has_diff, "needs_review": needs_rev,
-                      "total_diff_amount": float(total_diff or 0)},
+            "stats": {
+                "total": int((stats_row or {}).get("total") or 0),
+                "today": int((stats_row or {}).get("today") or 0),
+                "month": int((stats_row or {}).get("month") or 0),
+                "matched": int((stats_row or {}).get("matched") or 0),
+                "has_diff": int((stats_row or {}).get("has_diff") or 0),
+                "needs_review": int((stats_row or {}).get("needs_review") or 0),
+                "total_diff_amount": float((stats_row or {}).get("total_diff_amount") or 0),
+            },
             "top_devices": [dict(d) for d in top_devices],
             "recent":      [dict(r) for r in recent],
             "monthly":     [dict(m) for m in monthly],

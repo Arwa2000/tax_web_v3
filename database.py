@@ -3,7 +3,7 @@
 PostgreSQL عبر Supabase (psycopg2)
 مع fallback إلى SQLite للتشغيل المحلي بدون إنترنت
 """
-import os, sqlite3, json
+import os, sqlite3, json, threading
 from contextlib import contextmanager
 
 # ── إعدادات Supabase ──────────────────────────────────────────────────────────
@@ -16,6 +16,17 @@ USE_POSTGRES = bool(SUPABASE_DB_URL or SUPABASE_PASSWORD)
 
 # ── SQLite fallback path ──────────────────────────────────────────────────────
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tax.db")
+
+_INIT_DONE = False
+_INIT_LOCK = threading.Lock()
+
+_PG_POOL = None
+_PG_POOL_LOCK = threading.Lock()
+_PG_POOL_DSN = None
+
+PG_POOL_MIN = int(os.environ.get("PG_POOL_MIN", "1") or "1")
+PG_POOL_MAX = int(os.environ.get("PG_POOL_MAX", "3") or "3")
+PG_POOL_DISABLE = (os.environ.get("PG_POOL_DISABLE", "").strip().lower() in ("1", "true", "yes"))
 
 
 # ════════════════════════════════════════════════════════════════════════════════
@@ -54,10 +65,13 @@ class PGCursor:
 
 
 class PGConnection:
-    def __init__(self, dsn):
-        import psycopg2
-        self._cn = psycopg2.connect(dsn, connect_timeout=15)
-        self._cn.autocommit = False
+    def __init__(self, dsn=None, _cn=None, _pool=None):
+        if _cn is None:
+            import psycopg2
+            _cn = psycopg2.connect(dsn, connect_timeout=15)
+        _cn.autocommit = False
+        self._cn = _cn
+        self._pool = _pool
 
     def _fix(self, sql, params=None):
         """تحويل ? إلى %s وإزالة AUTOINCREMENT"""
@@ -99,7 +113,17 @@ class PGConnection:
         self._cn.rollback()
 
     def close(self):
-        self._cn.close()
+        if self._pool is None:
+            self._cn.close()
+            return
+        try:
+            if getattr(self._cn, "closed", 0) == 0:
+                try:
+                    self._cn.rollback()
+                except Exception:
+                    pass
+        finally:
+            self._pool.putconn(self._cn)
 
 
 # ════════════════════════════════════════════════════════════════════════════════
@@ -159,10 +183,46 @@ def _build_dsn():
     dbname   = os.environ.get("SUPABASE_DB",   "postgres")
     return f"postgresql://{user}:{password}@{host}:{port}/{dbname}?sslmode=require"
 
+def _get_pg_pool():
+    global _PG_POOL, _PG_POOL_DSN
+    if not USE_POSTGRES or PG_POOL_DISABLE:
+        return None
+    dsn = _build_dsn()
+    with _PG_POOL_LOCK:
+        if _PG_POOL is not None and _PG_POOL_DSN == dsn:
+            return _PG_POOL
+
+        import psycopg2
+        from psycopg2.pool import ThreadedConnectionPool
+
+        if _PG_POOL is not None:
+            try:
+                _PG_POOL.closeall()
+            except Exception:
+                pass
+            _PG_POOL = None
+            _PG_POOL_DSN = None
+
+        minc = max(1, PG_POOL_MIN)
+        maxc = max(minc, PG_POOL_MAX)
+        _PG_POOL = ThreadedConnectionPool(minc, maxc, dsn, connect_timeout=15)
+        _PG_POOL_DSN = dsn
+        return _PG_POOL
+
 
 def conn():
     if USE_POSTGRES:
-        return PGConnection(_build_dsn())
+        pool = _get_pg_pool()
+        if pool is None:
+            return PGConnection(_build_dsn())
+        cn = pool.getconn()
+        if getattr(cn, "closed", 0):
+            try:
+                pool.putconn(cn, close=True)
+            except Exception:
+                pass
+            cn = pool.getconn()
+        return PGConnection(_cn=cn, _pool=pool)
     else:
         return SQLiteConnection(DB_PATH)
 
@@ -507,22 +567,34 @@ CREATE TABLE IF NOT EXISTS alerts (
 
 
 def init():
-    db = conn()
-    try:
-        if USE_POSTGRES:
-            db.executescript(CREATE_TABLES_PG)
-        else:
-            db.executescript(CREATE_TABLES_SQLITE)
+    global _INIT_DONE
+    if _INIT_DONE:
+        return
+    with _INIT_LOCK:
+        if _INIT_DONE:
+            return
 
-        # بيانات تجريبية إن كانت فارغة
-        if not db.execute("SELECT 1 FROM clients LIMIT 1").fetchone():
-            _seed(db)
-        db.commit()
-    except Exception as e:
-        db.rollback()
-        raise
-    finally:
-        db.close()
+        db = conn()
+        try:
+            skip_ddl = (os.environ.get("SKIP_DB_DDL", "").strip().lower() in ("1", "true", "yes"))
+            skip_seed = (os.environ.get("SKIP_DB_SEED", "").strip().lower() in ("1", "true", "yes"))
+
+            if not skip_ddl:
+                if USE_POSTGRES:
+                    db.executescript(CREATE_TABLES_PG)
+                else:
+                    db.executescript(CREATE_TABLES_SQLITE)
+
+            if not skip_seed:
+                if not db.execute("SELECT 1 FROM clients LIMIT 1").fetchone():
+                    _seed(db)
+            db.commit()
+            _INIT_DONE = True
+        except Exception:
+            db.rollback()
+            raise
+        finally:
+            db.close()
 
 
 def _seed(db):

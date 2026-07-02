@@ -36,6 +36,20 @@ def get_client_perms(user_id: int, client_id: int):
         "can_submit_session":  1,
     }
 
+def get_client_perms_in_db(db, user_id: int, client_id: int):
+    perms = db.execute(
+        "SELECT * FROM client_permissions WHERE user_id=? AND client_id=?",
+        (user_id, client_id),
+    ).fetchone()
+    return dict(perms) if perms else {
+        "can_view_matching":   1,
+        "can_view_visits":     0,
+        "can_view_checklists": 0,
+        "can_view_devices":    0,
+        "can_view_banks":      0,
+        "can_submit_session":  1,
+    }
+
 # ── My Portal ─────────────────────────────────────────────────────────────────
 
 @router.get("/me")
@@ -62,7 +76,7 @@ def portal_me(user=Depends(get_client_user)):
         db.close()
         raise HTTPException(404, "العميل غير موجود")
 
-    perms = get_client_perms(user["id"], client_id)
+    perms = get_client_perms_in_db(db, user["id"], client_id)
 
     # Stats
     sessions = db.execute(
@@ -95,43 +109,47 @@ def portal_sessions(user=Depends(get_client_user)):
     client_id = user.get("client_id")
     if not client_id:
         raise HTTPException(400, "غير مرتبط بعميل")
-    perms = get_client_perms(user["id"], client_id)
-    if not perms.get("can_view_matching"):
-        raise HTTPException(403, "ليس لديك صلاحية عرض المطابقات")
     db = conn()
-    rows = db.execute("""
-        SELECT bs.*, b.name as branch_name, d.name as device_name,
-               sa.status as approval_status, sa.reviewer_notes, sa.client_notes,
-               sa.submitted_at, sa.reviewed_at,
-               u.full_name as reviewer_name
-        FROM balance_sessions bs
-        LEFT JOIN branches b ON bs.branch_id=b.id
-        LEFT JOIN network_devices d ON bs.device_id=d.id
-        LEFT JOIN session_approvals sa ON sa.session_id=bs.id
-        LEFT JOIN users u ON sa.reviewed_by=u.id
-        WHERE bs.client_id=?
-        ORDER BY bs.curr_date DESC, bs.curr_time DESC
-    """, (client_id,)).fetchall()
-    db.close()
-    return [dict(r) for r in rows]
+    try:
+        perms = get_client_perms_in_db(db, user["id"], client_id)
+        if not perms.get("can_view_matching"):
+            raise HTTPException(403, "ليس لديك صلاحية عرض المطابقات")
+        rows = db.execute("""
+            SELECT bs.*, b.name as branch_name, d.name as device_name,
+                   sa.status as approval_status, sa.reviewer_notes, sa.client_notes,
+                   sa.submitted_at, sa.reviewed_at,
+                   u.full_name as reviewer_name
+            FROM balance_sessions bs
+            LEFT JOIN branches b ON bs.branch_id=b.id
+            LEFT JOIN network_devices d ON bs.device_id=d.id
+            LEFT JOIN session_approvals sa ON sa.session_id=bs.id
+            LEFT JOIN users u ON sa.reviewed_by=u.id
+            WHERE bs.client_id=?
+            ORDER BY bs.curr_date DESC, bs.curr_time DESC
+        """, (client_id,)).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        db.close()
 
 @router.get("/devices")
 def portal_devices(user=Depends(get_client_user)):
     client_id = user.get("client_id")
     if not client_id: raise HTTPException(400, "غير مرتبط بعميل")
-    perms = get_client_perms(user["id"], client_id)
-    if not perms.get("can_view_devices"):
-        raise HTTPException(403, "ليس لديك صلاحية عرض الأجهزة")
     db = conn()
-    rows = db.execute("""
-        SELECT d.*, b.name as branch_name, ba.bank_name
-        FROM network_devices d
-        LEFT JOIN branches b ON d.branch_id=b.id
-        LEFT JOIN bank_accounts ba ON d.bank_account_id=ba.id
-        WHERE d.client_id=?
-    """, (client_id,)).fetchall()
-    db.close()
-    return [dict(r) for r in rows]
+    try:
+        perms = get_client_perms_in_db(db, user["id"], client_id)
+        if not perms.get("can_view_devices"):
+            raise HTTPException(403, "ليس لديك صلاحية عرض الأجهزة")
+        rows = db.execute("""
+            SELECT d.*, b.name as branch_name, ba.bank_name
+            FROM network_devices d
+            LEFT JOIN branches b ON d.branch_id=b.id
+            LEFT JOIN bank_accounts ba ON d.bank_account_id=ba.id
+            WHERE d.client_id=?
+        """, (client_id,)).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        db.close()
 
 @router.get("/branches")
 def portal_branches(user=Depends(get_client_user)):
@@ -164,55 +182,53 @@ def submit_session(data: PortalSessionModel, user=Depends(get_client_user)):
     """العميل يرفع موازنة — تذهب للمدير للموافقة"""
     client_id = user.get("client_id")
     if not client_id: raise HTTPException(400, "غير مرتبط بعميل")
-    perms = get_client_perms(user["id"], client_id)
-    if not perms.get("can_submit_session"):
-        raise HTTPException(403, "ليس لديك صلاحية رفع الموازنات")
-
-    diff_count  = data.net_tx_count  - data.prog_inv_count
-    diff_amount = round(data.net_tx_amount - data.prog_inv_amount, 2)
-    if diff_count == 0 and abs(diff_amount) < 0.01:
-        match_status = "متطابقة"
-    elif abs(diff_count) <= 2 and abs(diff_amount) <= 100:
-        match_status = "تحتاج مراجعة"
-    else:
-        match_status = "يوجد فرق"
-
     db = conn()
-    # Insert session
-    cur = db.execute("""
-        INSERT INTO balance_sessions
-        (client_id,branch_id,device_id,reviewer_name,
-         prev_date,prev_time,prev_net_count,prev_net_amount,
-         curr_date,curr_time,net_tx_count,net_tx_amount,
-         prog_inv_count,prog_inv_amount,diff_count,diff_amount,match_status,notes)
-        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-    """, (client_id, data.branch_id, data.device_id, user["full_name"],
-          data.prev_date, data.prev_time, data.prev_net_count or 0, data.prev_net_amount or 0,
-          data.curr_date, data.curr_time, data.net_tx_count, data.net_tx_amount,
-          data.prog_inv_count, data.prog_inv_amount,
-          diff_count, diff_amount, match_status, data.client_notes or ""))
-    session_id = cur.lastrowid
+    try:
+        perms = get_client_perms_in_db(db, user["id"], client_id)
+        if not perms.get("can_submit_session"):
+            raise HTTPException(403, "ليس لديك صلاحية رفع الموازنات")
+        diff_count  = data.net_tx_count  - data.prog_inv_count
+        diff_amount = round(data.net_tx_amount - data.prog_inv_amount, 2)
+        if diff_count == 0 and abs(diff_amount) < 0.01:
+            match_status = "متطابقة"
+        elif abs(diff_count) <= 2 and abs(diff_amount) <= 100:
+            match_status = "تحتاج مراجعة"
+        else:
+            match_status = "يوجد فرق"
 
-    # Create approval request
-    db.execute("""
-        INSERT INTO session_approvals(session_id,submitted_by,status,client_notes)
-        VALUES(?,?,?,?)
-    """, (session_id, user["id"], "pending", data.client_notes or ""))
+        cur = db.execute("""
+            INSERT INTO balance_sessions
+            (client_id,branch_id,device_id,reviewer_name,
+             prev_date,prev_time,prev_net_count,prev_net_amount,
+             curr_date,curr_time,net_tx_count,net_tx_amount,
+             prog_inv_count,prog_inv_amount,diff_count,diff_amount,match_status,notes)
+            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """, (client_id, data.branch_id, data.device_id, user["full_name"],
+              data.prev_date, data.prev_time, data.prev_net_count or 0, data.prev_net_amount or 0,
+              data.curr_date, data.curr_time, data.net_tx_count, data.net_tx_amount,
+              data.prog_inv_count, data.prog_inv_amount,
+              diff_count, diff_amount, match_status, data.client_notes or ""))
+        session_id = cur.lastrowid
 
-    # Alert for admin
-    client = db.execute("SELECT name FROM clients WHERE id=?", (client_id,)).fetchone()
-    db.execute("""
-        INSERT INTO alerts(client_id,level,message)
-        VALUES(?,?,?)
-    """, (client_id, "info",
-          f"طلب موافقة جديد — {client['name']} — {data.curr_date} "
-          f"| الحالة: {match_status} | فرق: {diff_count} عملية / {diff_amount:,.2f} ر.س"))
+        db.execute("""
+            INSERT INTO session_approvals(session_id,submitted_by,status,client_notes)
+            VALUES(?,?,?,?)
+        """, (session_id, user["id"], "pending", data.client_notes or ""))
 
-    db.commit()
-    row = db.execute("SELECT * FROM balance_sessions WHERE id=?", (session_id,)).fetchone()
-    db.close()
-    return {**dict(row), "approval_status": "pending",
-            "diff_count": diff_count, "diff_amount": diff_amount}
+        client = db.execute("SELECT name FROM clients WHERE id=?", (client_id,)).fetchone()
+        db.execute("""
+            INSERT INTO alerts(client_id,level,message)
+            VALUES(?,?,?)
+        """, (client_id, "info",
+              f"طلب موافقة جديد — {client['name']} — {data.curr_date} "
+              f"| الحالة: {match_status} | فرق: {diff_count} عملية / {diff_amount:,.2f} ر.س"))
+
+        db.commit()
+        row = db.execute("SELECT * FROM balance_sessions WHERE id=?", (session_id,)).fetchone()
+        return {**dict(row), "approval_status": "pending",
+                "diff_count": diff_count, "diff_amount": diff_amount}
+    finally:
+        db.close()
 
 
 # ── Admin: Approval Management ────────────────────────────────────────────────
