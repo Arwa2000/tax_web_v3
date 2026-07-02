@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>فاحص XML — ZATCA Engine</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;direction:rtl;background:#0f172a;color:#e2e8f0;min-height:100vh}
+:root{
+  --bg:#0f172a;--card:#1e293b;--card2:#162032;--border:#334155;
+  --accent:#38bdf8;--green:#4ade80;--red:#f87171;--yellow:#fbbf24;--blue:#60a5fa;--purple:#a78bfa;
+  --text:#e2e8f0;--muted:#94a3b8;--muted2:#64748b;
+}
+
+/* Layout */
+.app{display:grid;grid-template-columns:280px 1fr;height:100vh}
+.sidebar{background:var(--card);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.main{display:flex;flex-direction:column;overflow:hidden}
+
+/* Sidebar */
+.logo{padding:16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.logo-t{font-size:14px;font-weight:700;color:var(--accent)}
+.logo-s{font-size:11px;color:var(--muted);margin-top:2px}
+.tabs-side{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.tab-s{flex:1;padding:9px 4px;font-size:11px;text-align:center;cursor:pointer;color:var(--muted);border:none;background:none;border-bottom:2px solid transparent;transition:all .15s;font-family:inherit}
+.tab-s.active{color:var(--accent);border-bottom-color:var(--accent)}
+.side-content{flex:1;overflow-y:auto}
+
+/* Upload zone */
+.upload-zone{margin:14px;border:2px dashed var(--border);border-radius:12px;padding:24px 14px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:rgba(56,189,248,.05)}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.upload-icon{font-size:32px;margin-bottom:8px}
+.upload-t{font-size:13px;color:var(--text);font-weight:500}
+.upload-s{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* Score card */
+.score-card{margin:0 14px 14px;background:var(--card2);border-radius:12px;padding:14px;border:1px solid var(--border)}
+.score-ring{text-align:center;margin-bottom:12px}
+.score-num{font-size:42px;font-weight:800;margin-bottom:2px}
+.score-label{font-size:11px;color:var(--muted)}
+.score-bars{display:grid;gap:6px}
+.sbar{display:flex;align-items:center;gap:8px;font-size:11px}
+.sbar-label{width:60px;color:var(--muted);text-align:right;flex-shrink:0}
+.sbar-track{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.sbar-fill{height:100%;border-radius:3px;transition:width .4s}
+.sbar-val{width:28px;text-align:left;font-weight:600;flex-shrink:0}
+
+/* Tree view */
+.tree{padding:8px;font-family:monospace;font-size:11px}
+.tree-node{user-select:none}
+.tree-row{display:flex;align-items:flex-start;gap:4px;padding:2px 4px;border-radius:4px;cursor:pointer;line-height:1.5}
+.tree-row:hover{background:rgba(255,255,255,.05)}
+.tree-row.selected{background:rgba(56,189,248,.1)}
+.tree-toggle{width:14px;flex-shrink:0;color:var(--muted2);font-size:10px;padding-top:1px}
+.tree-tag{color:var(--blue)}
+.tree-attr{color:var(--purple)}
+.tree-val{color:var(--green)}
+.tree-ns{color:var(--muted2)}
+.tree-children{padding-right:14px;border-right:1px solid var(--border);margin-right:7px}
+.tree-search{padding:8px;border-bottom:1px solid var(--border);flex-shrink:0}
+.tree-search input{width:100%;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px}
+.tree-search input:focus{outline:none;border-color:var(--accent)}
+.tree-highlight{background:rgba(251,191,36,.25);border-radius:2px}
+
+/* Main area */
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.topbar-tabs{display:flex;gap:2px}
+.ttab{padding:6px 14px;font-size:12px;color:var(--muted);cursor:pointer;border-radius:6px;border:none;background:none;font-family:inherit;transition:all .15s}
+.ttab:hover{background:rgba(255,255,255,.05);color:var(--text)}
+.ttab.active{background:var(--accent);color:#0f172a;font-weight:600}
+.file-info{margin-right:auto;font-size:11px;color:var(--muted)}
+.content{flex:1;overflow-y:auto;padding:16px}
+
+/* Report */
+.report-header{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.rh-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.rh-num{font-size:26px;font-weight:700}
+.rh-label{font-size:11px;color:var(--muted);margin-top:3px}
+.rh-e{color:var(--red)}.rh-w{color:var(--yellow)}.rh-n{color:var(--blue)}.rh-s{color:var(--green)}
+
+.section{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden}
+.section-hdr{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.section-title{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.section-count{display:flex;gap:6px}
+.section-body{padding:12px 14px}
+
+/* Result item */
+.result-item{display:grid;grid-template-columns:28px 1fr;gap:8px;padding:8px 10px;border-radius:8px;margin-bottom:6px;font-size:12px;align-items:start}
+.result-item:last-child{margin-bottom:0}
+.ri-e{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2)}
+.ri-w{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2)}
+.ri-n{background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.2)}
+.ri-s{background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2)}
+.ri-icon{font-size:16px;margin-top:1px}
+.ri-field{font-weight:600;color:var(--text);margin-bottom:3px}
+.ri-val{color:var(--muted);font-family:monospace;font-size:11px;background:rgba(0,0,0,.2);padding:2px 6px;border-radius:4px;display:inline-block;margin-bottom:3px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ri-msg{color:var(--muted);line-height:1.5}
+.ri-fix{color:var(--accent);font-size:11px;margin-top:4px}
+.ri-fix::before{content:'💡 '}
+
+/* XML view */
+.xml-view{background:#0d1117;border-radius:10px;padding:16px;font-family:'Cascadia Code','Consolas',monospace;font-size:12px;direction:ltr;text-align:left;line-height:1.8;overflow-x:auto;white-space:pre}
+.xv-tag{color:#7ee787}.xv-attr{color:#79c0ff}.xv-val{color:#a5d6ff}.xv-str{color:#a8ff78}.xv-comment{color:#8b949e;font-style:italic}.xv-ns{color:#ff7b72}
+
+/* Empty state */
+.empty{text-align:center;padding:60px 20px}
+.empty-icon{font-size:56px;margin-bottom:16px;opacity:.4}
+.empty-t{font-size:16px;font-weight:600;color:var(--muted);margin-bottom:6px}
+.empty-s{font-size:13px;color:var(--muted2)}
+
+/* Sample button */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;font-size:12px;border-radius:7px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text);font-family:inherit;transition:all .13s}
+.btn:hover{background:rgba(255,255,255,.05)}
+.btn-accent{background:var(--accent);color:#0f172a;border-color:var(--accent);font-weight:600}
+.btn-accent:hover{opacity:.85}
+
+/* Node detail panel */
+.node-panel{background:var(--card2);border-top:1px solid var(--border);padding:12px;flex-shrink:0;max-height:160px;overflow-y:auto}
+.np-path{font-size:10px;color:var(--muted2);font-family:monospace;margin-bottom:6px}
+.np-tag{font-size:13px;font-weight:700;color:var(--blue);margin-bottom:4px}
+.np-val{font-size:12px;color:var(--green);font-family:monospace;word-break:break-all}
+.np-attrs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.np-attr{font-size:11px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.2);padding:2px 8px;border-radius:4px;font-family:monospace}
+.np-copy{float:left;cursor:pointer;font-size:10px;color:var(--accent);margin-top:2px}
+
+/* ═══════════════ MOBILE RESPONSIVE ═══════════════ */
+@media (max-width: 768px) {
+  /* Stack layout vertically on mobile */
+  .app{grid-template-columns:1fr !important;grid-template-rows:auto 1fr}
+
+  /* Sidebar becomes top horizontal bar */
+  .sidebar{
+    width:100% !important;
+    height:auto;
+    border-left:none;
+    border-bottom:1px solid var(--border);
+    flex-direction:row;
+    overflow-x:auto;
+    overflow-y:hidden;
+    flex-wrap:nowrap;
+    padding:8px;
+    gap:6px
+  }
+
+  /* Logo compact */
+  .logo{padding:6px 10px;border-bottom:none;border-right:1px solid var(--border);flex-shrink:0;white-space:nowrap}
+  .logo-s{display:none}
+
+  /* Sidebar tabs become horizontal */
+  .tabs-side{flex-shrink:0;border-bottom:none;border-right:1px solid var(--border)}
+  .tab-s{padding:7px 10px;font-size:11px;white-space:nowrap}
+
+  /* Side content panels hidden on mobile, main takes over */
+  .side-content{display:none !important}
+  .side-content.mobile-show{display:flex !important;position:fixed;inset:0;z-index:300;background:rgba(15,23,42,.95);overflow-y:auto;flex-direction:column;padding:16px}
+
+  /* Show panels as modal overlay */
+  .upload-zone{margin:8px;padding:16px 10px}
+
+  /* Main area full height */
+  .main{height:calc(100vh - 56px);overflow:hidden;border:none}
+
+  /* Topbar compact */
+  .topbar{padding:8px 10px;flex-wrap:wrap;gap:6px}
+  .topbar-tabs .ttab{padding:5px 10px;font-size:11px}
+  .file-info{font-size:10px;display:none}
+
+  /* Content padding */
+  .content{padding:10px}
+
+  /* Report header: 2 columns */
+  .report-header{grid-template-columns:1fr 1fr !important;gap:8px}
+  .rh-card{padding:10px}
+  .rh-num{font-size:20px}
+  .rh-label{font-size:10px}
+
+  /* Sections */
+  .section-hdr{padding:8px 12px}
+  .section-title{font-size:12px}
+  .section-body{padding:8px 12px}
+
+  /* Result items */
+  .result-item{grid-template-columns:22px 1fr;gap:6px;padding:7px 8px}
+  .ri-icon{font-size:14px}
+  .ri-field{font-size:11px}
+  .ri-msg{font-size:11px}
+  .ri-fix{font-size:10px}
+  .ri-val{font-size:10px}
+
+  /* Rules table */
+  table{font-size:11px}
+  td,th{padding:6px 8px}
+
+  /* XML view */
+  .xml-view{font-size:10px;padding:10px}
+
+  /* Node panel */
+  .node-panel{max-height:120px;padding:8px}
+  .np-tag{font-size:12px}
+  .np-val{font-size:10px}
+
+  /* Buttons */
+  .btn{padding:6px 10px;font-size:11px}
+  .btn-accent{padding:6px 12px;font-size:12px}
+
+  /* Score card */
+  .score-card{margin:0 8px 8px}
+  .score-num{font-size:34px}
+
+  /* Tree search */
+  .tree-search{padding:6px}
+  .tree-search input{font-size:11px;padding:5px 8px}
+  .tree{font-size:10px;padding:6px}
+
+  /* Upload zone */
+  .upload-icon{font-size:24px}
+  .upload-t{font-size:12px}
+  .upload-s{font-size:10px}
+}
+
+/* Mobile: add panel toggle button */
+.mobile-panel-btn{display:none;position:fixed;bottom:16px;left:16px;z-index:400;background:var(--accent);color:#0f172a;border:none;border-radius:50px;padding:10px 16px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(56,189,248,.4)}
+@media(max-width:768px){.mobile-panel-btn{display:flex;align-items:center;gap:6px}}
+</style>
+</head>
+<body>
+<div class="app">
+<!-- Mobile: toggle upload/tree panel -->
+<button class="mobile-panel-btn" id="mobile-panel-btn" onclick="toggleMobilePanel()">
+  📂 رفع / شجرة
+</button>
+
+<!-- ══ Sidebar ══ -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-t">⚡ ZATCA XML Engine</div>
+    <div class="logo-s">محرك فحص الفواتير الإلكترونية</div>
+  </div>
+  <div class="tabs-side">
+    <button class="tab-s active" onclick="switchSide('upload',this)">رفع</button>
+    <button class="tab-s" onclick="switchSide('score',this)">النتيجة</button>
+    <button class="tab-s" onclick="switchSide('tree',this)">شجرة</button>
+  </div>
+
+  <!-- Upload panel -->
+  <div id="side-upload" class="side-content" style="padding:0">
+    <div class="upload-zone" id="drop-zone">
+      <input type="file" accept=".xml" onchange="handleFile(this.files[0])">
+      <div class="upload-icon">📂</div>
+      <div class="upload-t">اسحب ملف XML هنا</div>
+      <div class="upload-s">أو اضغط للاختيار</div>
+    </div>
+    <div style="padding:0 14px 10px;display:flex;flex-direction:column;gap:6px">
+      <button class="btn" onclick="loadSample('standard')" style="width:100%;justify-content:center">📄 فاتورة نموذجية صحيحة</button>
+      <button class="btn" onclick="loadSample('errors')" style="width:100%;justify-content:center">⚠️ فاتورة بها أخطاء</button>
+      <button class="btn" onclick="loadSample('credit')" style="width:100%;justify-content:center">📋 إشعار دائن</button>
+    </div>
+    <div id="file-meta" style="padding:0 14px 14px;display:none">
+      <div style="background:var(--card2);border-radius:8px;padding:10px;font-size:11px;border:1px solid var(--border)">
+        <div style="color:var(--muted);margin-bottom:4px">الملف المحمّل</div>
+        <div id="meta-name" style="color:var(--text);font-weight:600;word-break:break-all"></div>
+        <div id="meta-size" style="color:var(--muted);margin-top:2px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Score panel -->
+  <div id="side-score" class="side-content" style="display:none;padding:14px">
+    <div id="score-content">
+      <div class="empty" style="padding:30px 10px">
+        <div class="empty-icon">📊</div>
+        <div class="empty-t" style="font-size:13px">لا يوجد فحص</div>
+        <div class="empty-s">ارفع ملف XML أولاً</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tree panel -->
+  <div id="side-tree" class="side-content" style="display:none;flex-direction:column">
+    <div class="tree-search">
+      <input type="text" placeholder="بحث في الشجرة..." oninput="searchTree(this.value)" id="tree-search-input">
+    </div>
+    <div id="tree-container" class="tree" style="flex:1;overflow-y:auto"></div>
+  </div>
+
+  <!-- Node detail -->
+  <div id="node-panel" class="node-panel" style="display:none">
+    <div class="np-path" id="np-path"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="np-tag" id="np-tag"></div>
+      <span class="np-copy" onclick="copyNodeVal()" title="نسخ القيمة">📋 نسخ</span>
+    </div>
+    <div class="np-val" id="np-val"></div>
+    <div class="np-attrs" id="np-attrs"></div>
+  </div>
+</aside>
+
+<!-- ══ Main ══ -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-tabs">
+      <button class="ttab active" onclick="switchTab('report',this)">📋 تقرير الفحص</button>
+      <button class="ttab" onclick="switchTab('xml',this)">🔍 عرض XML</button>
+      <button class="ttab" onclick="switchTab('rules',this)">⚙️ قواعد الفحص</button>
+    </div>
+    <div class="file-info" id="file-info">لا يوجد ملف محمّل</div>
+    <button class="btn btn-accent" onclick="runValidation()" id="run-btn" style="display:none">▶ تشغيل الفحص</button>
+  </div>
+  <div class="content" id="main-content">
+    <div class="empty">
+      <div class="empty-icon">⚡</div>
+      <div class="empty-t">محرك فحص ZATCA</div>
+      <div class="empty-s">ارفع ملف XML لبدء الفحص الشامل</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════════════════════
+let currentXML = '';
+let currentDoc = null;
+let currentTab = 'report';
+let validationResults = null;
+let selectedNode = null;
+let treeSearchQuery = '';
+
+// ══════════════════════════════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════════════════════════════
+function switchSide(panel, el) {
+  ['upload','score','tree'].forEach(p => {
+    document.getElementById('side-'+p).style.display = 'none';
+  });
+  document.querySelectorAll('.tab-s').forEach(t => t.classList.remove('active'));
+  document.getElementById('side-'+panel).style.display = panel === 'tree' ? 'flex' : 'block';
+  document.getElementById('side-'+panel).style.flexDirection = panel === 'tree' ? 'column' : '';
+  el.classList.add('active');
+}
+
+function switchTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.ttab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderMainContent();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FILE HANDLING
+// ══════════════════════════════════════════════════════════════════════════════
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag'); handleFile(e.dataTransfer.files[0]); });
+
+function handleFile(file) {
+  if (!file || !file.name.endsWith('.xml')) { alert('يرجى اختيار ملف XML'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    currentXML = e.target.result;
+    processXML(file.name, file.size);
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function processXML(name, size) {
+  document.getElementById('file-meta').style.display = 'block';
+  document.getElementById('meta-name').textContent = name;
+  document.getElementById('meta-size').textContent = `الحجم: ${(size/1024).toFixed(1)} KB`;
+  document.getElementById('file-info').textContent = `📄 ${name} (${(size/1024).toFixed(1)} KB)`;
+  document.getElementById('run-btn').style.display = 'inline-flex';
+
+  try {
+    const parser = new DOMParser();
+    currentDoc = parser.parseFromString(currentXML, 'text/xml');
+    const parseErr = currentDoc.querySelector('parsererror');
+    if (parseErr) { currentDoc = null; }
+  } catch(e) { currentDoc = null; }
+
+  runValidation();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SAMPLE XMLs
+// ══════════════════════════════════════════════════════════════════════════════
+function loadSample(type) {
+  const samples = {
+    standard: `<?xml version="1.0" encoding="UTF-8"?>
+<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
+         xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
+         xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"
+         xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2">
+  <ext:UBLExtensions>
+    <ext:UBLExtension>
+      <ext:ExtensionURI>urn:oasis:names:specification:ubl:dsig:enveloped:xades</ext:ExtensionURI>
+      <ext:ExtensionContent>
+        <sig:UBLDocumentSignatures xmlns:sig="urn:oasis:names:specification:ubl:schema:xsd:CommonSignatureComponents-2">
+          <sbc:SignatureInformation xmlns:sbc="urn:oasis:names:specification:ubl:schema:xsd:SignatureBasicComponents-2">
+            <cbc:ID>urn:oasis:names:specification:ubl:signature:Invoice</cbc:ID>
+            <sbc:ReferencedSignatureID>urn:oasis:names:specification:ubl:signature:1</sbc:ReferencedSignatureID>
+          </sbc:SignatureInformation>
+        </sig:UBLDocumentSignatures>
+      </ext:ExtensionContent>
+    </ext:UBLExtension>
+  </ext:UBLExtensions>
+  <cbc:UBLVersionID>2.1</cbc:UBLVersionID>
+  <cbc:CustomizationID>urn:cen.eu:en16931:2017#conformant#urn:fdc:peppol.eu:2017:poacc:billing:international:aunz:3.0</cbc:CustomizationID>
+  <cbc:ProfileID>reporting:1.0</cbc:ProfileID>
+  <cbc:ID>SME00010</cbc:ID>
+  <cbc:UUID>8e6f4a2d-1c3b-4e5d-9f7a-2b6c8d4e0f1a</cbc:UUID>
+  <cbc:IssueDate>2024-03-15</cbc:IssueDate>
+  <cbc:IssueTime>14:30:00</cbc:IssueTime>
+  <cbc:InvoiceTypeCode name="0200000">388</cbc:InvoiceTypeCode>
+  <cbc:Note languageID="ar">فاتورة ضريبية</cbc:Note>
+  <cbc:DocumentCurrencyCode>SAR</cbc:DocumentCurrencyCode>
+  <cbc:TaxCurrencyCode>SAR</cbc:TaxCurrencyCode>
+  <cac:AdditionalDocumentReference>
+    <cbc:ID>ICV</cbc:ID>
+    <cbc:UUID>1</cbc:UUID>
+  </cac:AdditionalDocumentReference>
+  <cac:AdditionalDocumentReference>
+    <cbc:ID>PIH</cbc:ID>
+    <cbc:Attachment>
+      <cbc:EmbeddedDocumentBinaryObject mimeCode="text/plain">NWZlY2ViNjZmZmM4NmYzOGQ5NTI3ODZjNmQ2OTZjNzljMmRiYzIzOWRkNGU5MWI0NjcyOWQ3M2EyN2ZhNTdlOQ==</cbc:EmbeddedDocumentBinaryObject>
+    </cbc:Attachment>
+  </cac:AdditionalDocumentReference>
+  <cac:AdditionalDocumentReference>
+    <cbc:ID>QR</cbc:ID>
+    <cbc:Attachment>
+      <cbc:EmbeddedDocumentBinaryObject mimeCode="text/plain">ARdTaGFyaWsgSW50ZXJuYXRpb25hbCBMVEQCDzMxMTExMTExMTExMTExMwMPMjAyNC0wMy0xNVQxNDozMDowMAQHMTAwLjAwMAUGMTMuMDc2</cbc:EmbeddedDocumentBinaryObject>
+    </cbc:Attachment>
+  </cac:AdditionalDocumentReference>
+  <cac:Signature>
+    <cbc:ID>urn:oasis:names:specification:ubl:signature:Invoice</cbc:ID>
+    <cbc:SignatureMethod>urn:oasis:names:specification:ubl:dsig:enveloped:xades</cbc:SignatureMethod>
+  </cac:Signature>
+  <cac:AccountingSupplierParty>
+    <cac:Party>
+      <cac:PartyIdentification>
+        <cbc:ID schemeID="CRN">1010101010</cbc:ID>
+      </cac:PartyIdentification>
+      <cac:PostalAddress>
+        <cbc:StreetName>شارع الملك فهد</cbc:StreetName>
+        <cbc:BuildingNumber>1234</cbc:BuildingNumber>
+        <cbc:CityName>الرياض</cbc:CityName>
+        <cbc:PostalZone>12345</cbc:PostalZone>
+        <cac:Country>
+          <cbc:IdentificationCode>SA</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyTaxScheme>
+        <cbc:CompanyID>311111111111113</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>شركة شارك الدولية</cbc:RegistrationName>
+      </cac:PartyLegalEntity>
+    </cac:Party>
+  </cac:AccountingSupplierParty>
+  <cac:AccountingCustomerParty>
+    <cac:Party>
+      <cac:PostalAddress>
+        <cbc:StreetName>شارع الأمير محمد بن عبدالعزيز</cbc:StreetName>
+        <cbc:BuildingNumber>4321</cbc:BuildingNumber>
+        <cbc:CityName>جدة</cbc:CityName>
+        <cbc:PostalZone>21577</cbc:PostalZone>
+        <cac:Country>
+          <cbc:IdentificationCode>SA</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyTaxScheme>
+        <cbc:CompanyID>399999999900003</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>شركة العميل النموذجية</cbc:RegistrationName>
+      </cac:PartyLegalEntity>
+    </cac:Party>
+  </cac:AccountingCustomerParty>
+  <cac:TaxTotal>
+    <cbc:TaxAmount currencyID="SAR">13.50</cbc:TaxAmount>
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="SAR">90.00</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="SAR">13.50</cbc:TaxAmount>
+      <cac:TaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>15.00</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+  </cac:TaxTotal>
+  <cac:LegalMonetaryTotal>
+    <cbc:LineExtensionAmount currencyID="SAR">90.00</cbc:LineExtensionAmount>
+    <cbc:TaxExclusiveAmount currencyID="SAR">90.00</cbc:TaxExclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="SAR">103.50</cbc:TaxInclusiveAmount>
+    <cbc:PayableAmount currencyID="SAR">103.50</cbc:PayableAmount>
+  </cac:LegalMonetaryTotal>
+  <cac:InvoiceLine>
+    <cbc:ID>1</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="PCE">3</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="SAR">90.00</cbc:LineExtensionAmount>
+    <cac:TaxTotal>
+      <cbc:TaxAmount currencyID="SAR">13.50</cbc:TaxAmount>
+      <cbc:RoundingAmount currencyID="SAR">103.50</cbc:RoundingAmount>
+    </cac:TaxTotal>
+    <cac:Item>
+      <cbc:Name>خدمة استشارية</cbc:Name>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>15.00</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="SAR">30.00</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+</Invoice>`,
+    errors: `<?xml version="1.0" encoding="UTF-8"?>
+<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
+         xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
+         xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+  <cbc:UBLVersionID>2.0</cbc:UBLVersionID>
+  <cbc:ID>INV-001</cbc:ID>
+  <cbc:IssueDate>15/03/2024</cbc:IssueDate>
+  <cbc:InvoiceTypeCode>388</cbc:InvoiceTypeCode>
+  <cbc:DocumentCurrencyCode>USD</cbc:DocumentCurrencyCode>
+  <cac:AccountingSupplierParty>
+    <cac:Party>
+      <cac:PartyTaxScheme>
+        <cbc:CompanyID>12345</cbc:CompanyID>
+        <cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>شركة بدون عنوان</cbc:RegistrationName>
+      </cac:PartyLegalEntity>
+    </cac:Party>
+  </cac:AccountingSupplierParty>
+  <cac:TaxTotal>
+    <cbc:TaxAmount currencyID="SAR">20.00</cbc:TaxAmount>
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="SAR">100.00</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="SAR">20.00</cbc:TaxAmount>
+      <cac:TaxCategory>
+        <cbc:ID>X</cbc:ID>
+        <cbc:Percent>20.00</cbc:Percent>
+        <cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+  </cac:TaxTotal>
+  <cac:LegalMonetaryTotal>
+    <cbc:LineExtensionAmount currencyID="SAR">100.00</cbc:LineExtensionAmount>
+    <cbc:TaxExclusiveAmount currencyID="SAR">100.00</cbc:TaxExclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="SAR">115.00</cbc:TaxInclusiveAmount>
+    <cbc:PayableAmount currencyID="SAR">115.00</cbc:PayableAmount>
+  </cac:LegalMonetaryTotal>
+  <cac:InvoiceLine>
+    <cbc:ID>1</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="PCE">2</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="SAR">100.00</cbc:LineExtensionAmount>
+    <cac:Item><cbc:Name>منتج</cbc:Name></cac:Item>
+    <cac:Price><cbc:PriceAmount currencyID="SAR">50.00</cbc:PriceAmount></cac:Price>
+  </cac:InvoiceLine>
+</Invoice>`,
+    credit: `<?xml version="1.0" encoding="UTF-8"?>
+<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
+         xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
+         xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"
+         xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2">
+  <ext:UBLExtensions><ext:UBLExtension><ext:ExtensionURI>urn:oasis:names:specification:ubl:dsig:enveloped:xades</ext:ExtensionURI><ext:ExtensionContent/></ext:UBLExtension></ext:UBLExtensions>
+  <cbc:UBLVersionID>2.1</cbc:UBLVersionID>
+  <cbc:ProfileID>reporting:1.0</cbc:ProfileID>
+  <cbc:ID>CN-2024-001</cbc:ID>
+  <cbc:UUID>a1b2c3d4-e5f6-7890-abcd-ef1234567890</cbc:UUID>
+  <cbc:IssueDate>2024-03-20</cbc:IssueDate>
+  <cbc:IssueTime>09:15:00</cbc:IssueTime>
+  <cbc:InvoiceTypeCode name="0200000">381</cbc:InvoiceTypeCode>
+  <cbc:DocumentCurrencyCode>SAR</cbc:DocumentCurrencyCode>
+  <cbc:TaxCurrencyCode>SAR</cbc:TaxCurrencyCode>
+  <cac:AdditionalDocumentReference><cbc:ID>ICV</cbc:ID><cbc:UUID>5</cbc:UUID></cac:AdditionalDocumentReference>
+  <cac:AdditionalDocumentReference><cbc:ID>PIH</cbc:ID><cbc:Attachment><cbc:EmbeddedDocumentBinaryObject mimeCode="text/plain">aGFzaFZhbHVlSGVyZQ==</cbc:EmbeddedDocumentBinaryObject></cbc:Attachment></cac:AdditionalDocumentReference>
+  <cac:AdditionalDocumentReference><cbc:ID>QR</cbc:ID><cbc:Attachment><cbc:EmbeddedDocumentBinaryObject mimeCode="text/plain">QVJXQ29kZUhlcmU=</cbc:EmbeddedDocumentBinaryObject></cbc:Attachment></cac:AdditionalDocumentReference>
+  <cac:Signature><cbc:ID>urn:oasis:names:specification:ubl:signature:Invoice</cbc:ID><cbc:SignatureMethod>urn:oasis:names:specification:ubl:dsig:enveloped:xades</cbc:SignatureMethod></cac:Signature>
+  <cac:AccountingSupplierParty>
+    <cac:Party>
+      <cac:PostalAddress><cbc:StreetName>طريق الملك عبدالله</cbc:StreetName><cbc:BuildingNumber>5678</cbc:BuildingNumber><cbc:CityName>الرياض</cbc:CityName><cbc:PostalZone>11564</cbc:PostalZone><cac:Country><cbc:IdentificationCode>SA</cbc:IdentificationCode></cac:Country></cac:PostalAddress>
+      <cac:PartyTaxScheme><cbc:CompanyID>300000000000003</cbc:CompanyID><cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme></cac:PartyTaxScheme>
+      <cac:PartyLegalEntity><cbc:RegistrationName>المورد النموذجي</cbc:RegistrationName></cac:PartyLegalEntity>
+    </cac:Party>
+  </cac:AccountingSupplierParty>
+  <cac:AccountingCustomerParty>
+    <cac:Party>
+      <cac:PostalAddress><cbc:StreetName>شارع التحلية</cbc:StreetName><cbc:BuildingNumber>9012</cbc:BuildingNumber><cbc:CityName>جدة</cbc:CityName><cbc:PostalZone>23521</cbc:PostalZone><cac:Country><cbc:IdentificationCode>SA</cbc:IdentificationCode></cac:Country></cac:PostalAddress>
+      <cac:PartyTaxScheme><cbc:CompanyID>399888777600003</cbc:CompanyID><cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme></cac:PartyTaxScheme>
+      <cac:PartyLegalEntity><cbc:RegistrationName>العميل النموذجي</cbc:RegistrationName></cac:PartyLegalEntity>
+    </cac:Party>
+  </cac:AccountingCustomerParty>
+  <cac:TaxTotal>
+    <cbc:TaxAmount currencyID="SAR">-7.50</cbc:TaxAmount>
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="SAR">-50.00</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="SAR">-7.50</cbc:TaxAmount>
+      <cac:TaxCategory><cbc:ID>S</cbc:ID><cbc:Percent>15.00</cbc:Percent><cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme></cac:TaxCategory>
+    </cac:TaxSubtotal>
+  </cac:TaxTotal>
+  <cac:LegalMonetaryTotal>
+    <cbc:LineExtensionAmount currencyID="SAR">-50.00</cbc:LineExtensionAmount>
+    <cbc:TaxExclusiveAmount currencyID="SAR">-50.00</cbc:TaxExclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="SAR">-57.50</cbc:TaxInclusiveAmount>
+    <cbc:PayableAmount currencyID="SAR">-57.50</cbc:PayableAmount>
+  </cac:LegalMonetaryTotal>
+  <cac:InvoiceLine>
+    <cbc:ID>1</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="PCE">-1</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="SAR">-50.00</cbc:LineExtensionAmount>
+    <cac:TaxTotal><cbc:TaxAmount currencyID="SAR">-7.50</cbc:TaxAmount><cbc:RoundingAmount currencyID="SAR">-57.50</cbc:RoundingAmount></cac:TaxTotal>
+    <cac:Item><cbc:Name>إرجاع منتج</cbc:Name><cac:ClassifiedTaxCategory><cbc:ID>S</cbc:ID><cbc:Percent>15.00</cbc:Percent><cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme></cac:ClassifiedTaxCategory></cac:Item>
+    <cac:Price><cbc:PriceAmount currencyID="SAR">50.00</cbc:PriceAmount></cac:Price>
+  </cac:InvoiceLine>
+</Invoice>`
+  };
+  currentXML = samples[type];
+  const name = type === 'standard' ? 'invoice_standard.xml' : type === 'errors' ? 'invoice_with_errors.xml' : 'credit_note.xml';
+  processXML(name, new Blob([currentXML]).size);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// VALIDATION ENGINE
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Rule Engine — each rule is an object with: id, category, severity, field, check(), fix
+const RULES = [
+
+  // ── Category 1: XML Structure ─────────────────────────────────────────────
+  {id:'XML-001',cat:'بنية XML',sev:'error',field:'XML Parsing',
+   check(doc,xml){
+     const pe=doc?.querySelector('parsererror');
+     if(!doc||pe) return {ok:false,val:'تعذّر التحليل',msg:'ملف XML غير صالح — خطأ في التحليل',fix:'تحقق من إغلاق جميع العلامات وصحة الترميز UTF-8'};
+     return {ok:true,val:'صالح',msg:'بنية XML صالحة'};
+   }},
+  {id:'XML-002',cat:'بنية XML',sev:'error',field:'Root Element',
+   check(doc){
+     const root=doc?.documentElement?.localName;
+     if(root!=='Invoice') return {ok:false,val:root||'—',msg:`العنصر الجذري "${root}" غير صحيح`,fix:'يجب أن يكون العنصر الجذري <Invoice>'};
+     return {ok:true,val:'Invoice',msg:'العنصر الجذري صحيح'};
+   }},
+  {id:'XML-003',cat:'بنية XML',sev:'error',field:'UBL Namespace',
+   check(doc){
+     const ns=doc?.documentElement?.namespaceURI||doc?.documentElement?.getAttribute('xmlns');
+     const expected='urn:oasis:names:specification:ubl:schema:xsd:Invoice-2';
+     if(!ns||!ns.includes('Invoice-2')) return {ok:false,val:ns||'مفقود',msg:'UBL Namespace غير صحيح أو مفقود',fix:`يجب أن يحتوي xmlns على: ${expected}`};
+     return {ok:true,val:'UBL 2.x',msg:'UBL Namespace صحيح'};
+   }},
+  {id:'XML-004',cat:'بنية XML',sev:'warning',field:'UBL Version',
+   check(doc){
+     const v=gv(doc,'UBLVersionID');
+     if(!v) return {ok:false,val:'مفقود',msg:'UBLVersionID غير موجود',fix:'أضف <cbc:UBLVersionID>2.1</cbc:UBLVersionID>'};
+     if(v!=='2.1') return {ok:false,val:v,msg:`UBL Version "${v}" — المطلوب 2.1`,fix:'غيّر قيمة UBLVersionID إلى 2.1'};
+     return {ok:true,val:v,msg:'UBL Version صحيح'};
+   }},
+  {id:'XML-005',cat:'بنية XML',sev:'note',field:'Encoding',
+   check(doc,xml){
+     const hasEnc=xml.includes('encoding="UTF-8"')||xml.includes("encoding='UTF-8'");
+     if(!hasEnc) return {ok:false,val:'غير محدد',msg:'لم يُحدَّد ترميز UTF-8 في تعريف XML',fix:"أضف encoding='UTF-8' في <?xml version=\"1.0\" encoding=\"UTF-8\"?>"};
+     return {ok:true,val:'UTF-8',msg:'الترميز UTF-8 محدد'};
+   }},
+
+  // ── Category 2: Invoice Identity ─────────────────────────────────────────
+  {id:'INV-001',cat:'هوية الفاتورة',sev:'error',field:'Invoice ID (cbc:ID)',
+   check(doc){
+     const v=gv(doc,'ID');
+     if(!v) return {ok:false,val:'مفقود',msg:'رقم الفاتورة (ID) مفقود',fix:'أضف <cbc:ID>رقم_الفاتورة</cbc:ID>'};
+     if(v.length>127) return {ok:false,val:v.slice(0,30)+'...',msg:'رقم الفاتورة يتجاوز 127 حرفاً',fix:'اختصر رقم الفاتورة لأقل من 127 حرفاً'};
+     return {ok:true,val:v,msg:'رقم الفاتورة موجود'};
+   }},
+  {id:'INV-002',cat:'هوية الفاتورة',sev:'error',field:'UUID',
+   check(doc){
+     const uuids=doc?.getElementsByTagName('UUID');
+     let mainUUID='';
+     if(uuids&&uuids.length>0){
+       for(let u of uuids){if(!u.getAttribute('schemeID')&&u.parentElement?.localName==='Invoice'){mainUUID=u.textContent;break;}}
+       if(!mainUUID) mainUUID=uuids[0]?.textContent||'';
+     }
+     if(!mainUUID) return {ok:false,val:'مفقود',msg:'UUID مفقود',fix:'أضف <cbc:UUID>xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</cbc:UUID>'};
+     const uuidRe=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+     if(!uuidRe.test(mainUUID)) return {ok:false,val:mainUUID,msg:'صيغة UUID غير صحيحة',fix:'يجب أن يكون UUID بصيغة: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'};
+     return {ok:true,val:mainUUID,msg:'UUID صحيح'};
+   }},
+  {id:'INV-003',cat:'هوية الفاتورة',sev:'error',field:'Issue Date (IssueDate)',
+   check(doc){
+     const v=gv(doc,'IssueDate');
+     if(!v) return {ok:false,val:'مفقود',msg:'تاريخ الإصدار مفقود',fix:'أضف <cbc:IssueDate>YYYY-MM-DD</cbc:IssueDate>'};
+     if(!/^\d{4}-\d{2}-\d{2}$/.test(v)) return {ok:false,val:v,msg:'تنسيق التاريخ غير صحيح',fix:'يجب أن يكون التاريخ بصيغة: YYYY-MM-DD (مثال: 2024-03-15)'};
+     const d=new Date(v);
+     if(isNaN(d)) return {ok:false,val:v,msg:'التاريخ غير صالح',fix:'تأكد من صحة اليوم والشهر والسنة'};
+     if(d>new Date()) return {ok:false,val:v,msg:'تاريخ الإصدار في المستقبل',fix:'تاريخ الإصدار يجب ألا يكون في المستقبل'};
+     return {ok:true,val:v,msg:'تاريخ الإصدار صحيح'};
+   }},
+  {id:'INV-004',cat:'هوية الفاتورة',sev:'error',field:'Issue Time (IssueTime)',
+   check(doc){
+     const v=gv(doc,'IssueTime');
+     if(!v) return {ok:false,val:'مفقود',msg:'وقت الإصدار مفقود',fix:'أضف <cbc:IssueTime>HH:MM:SS</cbc:IssueTime>'};
+     if(!/^\d{2}:\d{2}:\d{2}$/.test(v)) return {ok:false,val:v,msg:'تنسيق الوقت غير صحيح',fix:'يجب أن يكون الوقت بصيغة: HH:MM:SS (مثال: 14:30:00)'};
+     return {ok:true,val:v,msg:'وقت الإصدار صحيح'};
+   }},
+  {id:'INV-005',cat:'هوية الفاتورة',sev:'error',field:'Invoice Type Code',
+   check(doc){
+     const el=doc?.getElementsByTagName('InvoiceTypeCode')[0];
+     if(!el) return {ok:false,val:'مفقود',msg:'Invoice Type Code مفقود',fix:'أضف <cbc:InvoiceTypeCode name="SUBTYPE">CODE</cbc:InvoiceTypeCode>'};
+     const v=el.textContent;const nameAttr=el.getAttribute('name');
+     const validCodes=['388','381','383','386','381'];
+     if(!validCodes.includes(v)) return {ok:false,val:v,msg:`كود نوع الفاتورة "${v}" غير معترف به`,fix:'الأكواد الصالحة: 388 (فاتورة ضريبية), 381 (إشعار دائن), 383 (إشعار مدين)'};
+     if(!nameAttr) return {ok:false,val:v,msg:'سمة name مفقودة في InvoiceTypeCode',fix:'أضف name="0200000" أو name="0100000" حسب نوع الفاتورة'};
+     const validSubtypes=['0100000','0200000','0300000'];
+     if(!validSubtypes.includes(nameAttr)) return {ok:false,val:nameAttr,msg:`قيمة name "${nameAttr}" غير صحيحة`,fix:'القيم الصحيحة: 0100000 (نقدية) أو 0200000 (آجلة) أو 0300000 (مجمّعة)'};
+     return {ok:true,val:`${v} (${nameAttr})`,msg:`نوع الفاتورة صحيح: ${v==='388'?'فاتورة ضريبية':v==='381'?'إشعار دائن':'إشعار مدين'}`};
+   }},
+  {id:'INV-006',cat:'هوية الفاتورة',sev:'error',field:'Currency Code',
+   check(doc){
+     const v=gv(doc,'DocumentCurrencyCode');
+     if(!v) return {ok:false,val:'مفقود',msg:'رمز العملة مفقود',fix:'أضف <cbc:DocumentCurrencyCode>SAR</cbc:DocumentCurrencyCode>'};
+     if(v!=='SAR') return {ok:false,val:v,msg:`رمز العملة "${v}" — المطلوب SAR للمملكة العربية السعودية`,fix:'غيّر DocumentCurrencyCode إلى SAR'};
+     return {ok:true,val:v,msg:'رمز العملة SAR صحيح'};
+   }},
+  {id:'INV-007',cat:'هوية الفاتورة',sev:'note',field:'Profile ID',
+   check(doc){
+     const v=gv(doc,'ProfileID');
+     if(!v) return {ok:false,val:'مفقود',msg:'ProfileID غير موجود',fix:'أضف <cbc:ProfileID>reporting:1.0</cbc:ProfileID> أو simplified:1.0'};
+     const valid=['reporting:1.0','simplified:1.0'];
+     if(!valid.includes(v)) return {ok:false,val:v,msg:`ProfileID "${v}" غير معتمد`,fix:'القيم الصحيحة: reporting:1.0 أو simplified:1.0'};
+     return {ok:true,val:v,msg:'ProfileID صحيح'};
+   }},
+
+  // ── Category 3: ICV & PIH & QR ───────────────────────────────────────────
+  {id:'DOC-001',cat:'المراجع الإضافية',sev:'error',field:'ICV (Invoice Counter)',
+   check(doc){
+     const refs=doc?.getElementsByTagName('AdditionalDocumentReference')||[];
+     let icv=null;
+     for(let r of refs){const id=r.getElementsByTagName('ID')[0]?.textContent;if(id==='ICV'){icv=r.getElementsByTagName('UUID')[0]?.textContent;break;}}
+     if(!icv) return {ok:false,val:'مفقود',msg:'ICV (رقم الفاتورة التسلسلي) مفقود',fix:'أضف AdditionalDocumentReference بـ ID=ICV وUUID يساوي رقم تسلسلي'};
+     const n=parseInt(icv);
+     if(isNaN(n)||n<1) return {ok:false,val:icv,msg:'قيمة ICV يجب أن تكون رقماً موجباً',fix:'ضع رقماً تسلسلياً متصاعداً ابتداءً من 1'};
+     return {ok:true,val:icv,msg:`ICV موجود: ${icv}`};
+   }},
+  {id:'DOC-002',cat:'المراجع الإضافية',sev:'error',field:'PIH (Previous Invoice Hash)',
+   check(doc){
+     const refs=doc?.getElementsByTagName('AdditionalDocumentReference')||[];
+     let pih=null;
+     for(let r of refs){const id=r.getElementsByTagName('ID')[0]?.textContent;if(id==='PIH'){pih=r.getElementsByTagName('EmbeddedDocumentBinaryObject')[0]?.textContent;break;}}
+     if(!pih) return {ok:false,val:'مفقود',msg:'PIH (ختم الفاتورة السابقة) مفقود',fix:'أضف AdditionalDocumentReference بـ ID=PIH وقيمة Base64 للختم'};
+     if(pih.length<10) return {ok:false,val:pih,msg:'قيمة PIH قصيرة جداً — يُشك في صحتها',fix:'تأكد أن PIH هو الختم الكامل بترميز Base64 للفاتورة السابقة'};
+     return {ok:true,val:pih.slice(0,30)+'...',msg:'PIH موجود'};
+   }},
+  {id:'DOC-003',cat:'المراجع الإضافية',sev:'error',field:'QR Code',
+   check(doc){
+     const refs=doc?.getElementsByTagName('AdditionalDocumentReference')||[];
+     let qr=null;
+     for(let r of refs){const id=r.getElementsByTagName('ID')[0]?.textContent;if(id==='QR'){qr=r.getElementsByTagName('EmbeddedDocumentBinaryObject')[0]?.textContent;break;}}
+     if(!qr) return {ok:false,val:'مفقود',msg:'QR Code مفقود',fix:'أضف AdditionalDocumentReference بـ ID=QR وقيمة Base64 لبيانات QR'};
+     if(qr.length<20) return {ok:false,val:qr,msg:'قيمة QR Code قصيرة جداً',fix:'تأكد أن QR يحتوي على جميع البيانات المطلوبة (5 عناصر TLV على الأقل)'};
+     return {ok:true,val:qr.slice(0,30)+'...',msg:'QR Code موجود'};
+   }},
+
+  // ── Category 4: Signature ─────────────────────────────────────────────────
+  {id:'SIG-001',cat:'التوقيع الرقمي',sev:'error',field:'UBLExtensions',
+   check(doc){
+     const ext=doc?.getElementsByTagName('UBLExtensions')[0]||doc?.getElementsByTagName('ext:UBLExtensions')[0];
+     if(!ext) return {ok:false,val:'مفقود',msg:'UBLExtensions مفقود — لا يوجد توقيع رقمي',fix:'أضف عنصر UBLExtensions قبل أي عنصر آخر في الفاتورة'};
+     const extContent=ext.textContent?.trim();
+     if(!extContent||extContent.length<20) return {ok:false,val:'فارغ',msg:'UBLExtensions موجود لكن محتواه فارغ',fix:'يجب أن يحتوي UBLExtensions على بيانات التوقيع الرقمي XAdES'};
+     return {ok:true,val:'موجود',msg:'UBLExtensions موجود'};
+   }},
+  {id:'SIG-002',cat:'التوقيع الرقمي',sev:'error',field:'Signature Element',
+   check(doc){
+     const sig=doc?.getElementsByTagName('Signature')[0];
+     if(!sig) return {ok:false,val:'مفقود',msg:'عنصر Signature مفقود',fix:'أضف <cac:Signature> بعد AccountingCustomerParty'};
+     const sigID=sig.getElementsByTagName('ID')[0]?.textContent;
+     const expectedID='urn:oasis:names:specification:ubl:signature:Invoice';
+     if(sigID!==expectedID) return {ok:false,val:sigID||'—',msg:'قيمة Signature ID غير صحيحة',fix:`يجب أن تكون: ${expectedID}`};
+     return {ok:true,val:'موجود',msg:'عنصر Signature موجود وصحيح'};
+   }},
+
+  // ── Category 5: Supplier ──────────────────────────────────────────────────
+  {id:'SUP-001',cat:'بيانات المورد',sev:'error',field:'AccountingSupplierParty',
+   check(doc){
+     const el=doc?.getElementsByTagName('AccountingSupplierParty')[0];
+     if(!el) return {ok:false,val:'مفقود',msg:'بيانات المورد (AccountingSupplierParty) مفقودة',fix:'أضف عنصر <cac:AccountingSupplierParty>'};
+     return {ok:true,val:'موجود',msg:'بيانات المورد موجودة'};
+   }},
+  {id:'SUP-002',cat:'بيانات المورد',sev:'error',field:'Supplier Tax Number',
+   check(doc){
+     const supplier=doc?.getElementsByTagName('AccountingSupplierParty')[0];
+     if(!supplier) return {ok:false,val:'—',msg:'لا يوجد مورد',fix:''};
+     const companyID=supplier.getElementsByTagName('CompanyID')[0]?.textContent;
+     if(!companyID) return {ok:false,val:'مفقود',msg:'الرقم الضريبي للمورد مفقود',fix:'أضف <cbc:CompanyID> داخل PartyTaxScheme للمورد'};
+     if(!/^3\d{13}3$/.test(companyID)) return {ok:false,val:companyID,msg:`الرقم الضريبي "${companyID}" غير صحيح`,fix:'يجب أن يكون الرقم الضريبي 15 رقماً يبدأ بـ 3 وينتهي بـ 3'};
+     return {ok:true,val:companyID,msg:'الرقم الضريبي للمورد صحيح'};
+   }},
+  {id:'SUP-003',cat:'بيانات المورد',sev:'error',field:'Supplier Name',
+   check(doc){
+     const supplier=doc?.getElementsByTagName('AccountingSupplierParty')[0];
+     if(!supplier) return {ok:false,val:'—',msg:'لا يوجد مورد',fix:''};
+     const name=supplier.getElementsByTagName('RegistrationName')[0]?.textContent;
+     if(!name||!name.trim()) return {ok:false,val:'مفقود',msg:'اسم المورد مفقود',fix:'أضف <cbc:RegistrationName> داخل PartyLegalEntity للمورد'};
+     return {ok:true,val:name,msg:'اسم المورد موجود'};
+   }},
+  {id:'SUP-004',cat:'بيانات المورد',sev:'error',field:'Supplier Address',
+   check(doc){
+     const supplier=doc?.getElementsByTagName('AccountingSupplierParty')[0];
+     if(!supplier) return {ok:false,val:'—',msg:'لا يوجد مورد',fix:''};
+     const addr=supplier.getElementsByTagName('PostalAddress')[0];
+     if(!addr) return {ok:false,val:'مفقود',msg:'عنوان المورد مفقود',fix:'أضف <cac:PostalAddress> داخل Party للمورد'};
+     const street=addr.getElementsByTagName('StreetName')[0]?.textContent;
+     const building=addr.getElementsByTagName('BuildingNumber')[0]?.textContent;
+     const city=addr.getElementsByTagName('CityName')[0]?.textContent;
+     const country=addr.getElementsByTagName('IdentificationCode')[0]?.textContent;
+     const missing=[];
+     if(!street) missing.push('StreetName');if(!building) missing.push('BuildingNumber');
+     if(!city) missing.push('CityName');if(!country) missing.push('Country');
+     if(missing.length>0) return {ok:false,val:`يوجد لكن ناقص`,msg:`الحقول المفقودة: ${missing.join(', ')}`,fix:'أضف الحقول المفقودة داخل PostalAddress للمورد'};
+     if(country!=='SA') return {ok:false,val:country,msg:'رمز الدولة غير صحيح',fix:'رمز الدولة يجب أن يكون SA للمملكة العربية السعودية'};
+     return {ok:true,val:`${street}، ${city}`,msg:'عنوان المورد مكتمل'};
+   }},
+
+  // ── Category 6: Customer ──────────────────────────────────────────────────
+  {id:'CUS-001',cat:'بيانات المشتري',sev:'error',field:'AccountingCustomerParty',
+   check(doc){
+     const el=doc?.getElementsByTagName('AccountingCustomerParty')[0];
+     if(!el) return {ok:false,val:'مفقود',msg:'بيانات المشتري (AccountingCustomerParty) مفقودة',fix:'أضف <cac:AccountingCustomerParty>'};
+     return {ok:true,val:'موجود',msg:'بيانات المشتري موجودة'};
+   }},
+  {id:'CUS-002',cat:'بيانات المشتري',sev:'warning',field:'Customer Name',
+   check(doc){
+     const cust=doc?.getElementsByTagName('AccountingCustomerParty')[0];
+     if(!cust) return {ok:false,val:'—',msg:'لا يوجد مشتري',fix:''};
+     const name=cust.getElementsByTagName('RegistrationName')[0]?.textContent;
+     if(!name||!name.trim()) return {ok:false,val:'مفقود',msg:'اسم المشتري مفقود',fix:'أضف <cbc:RegistrationName> للمشتري'};
+     return {ok:true,val:name,msg:'اسم المشتري موجود'};
+   }},
+  {id:'CUS-003',cat:'بيانات المشتري',sev:'note',field:'Customer Tax Number',
+   check(doc){
+     const cust=doc?.getElementsByTagName('AccountingCustomerParty')[0];
+     if(!cust) return {ok:false,val:'—',msg:'لا يوجد مشتري',fix:''};
+     const companyID=cust.getElementsByTagName('CompanyID')[0]?.textContent;
+     if(!companyID) return {ok:false,val:'مفقود',msg:'الرقم الضريبي للمشتري مفقود (اختياري للمعاملات B2C)',fix:'إذا كان المشتري مسجلاً في الضريبة أضف رقمه الضريبي'};
+     if(!/^3\d{13}3$/.test(companyID)) return {ok:false,val:companyID,msg:`الرقم الضريبي "${companyID}" غير صحيح`,fix:'15 رقماً يبدأ بـ 3 وينتهي بـ 3'};
+     return {ok:true,val:companyID,msg:'الرقم الضريبي للمشتري صحيح'};
+   }},
+
+  // ── Category 7: Tax ────────────────────────────────────────────────────────
+  {id:'TAX-001',cat:'بيانات الضريبة',sev:'error',field:'TaxTotal',
+   check(doc){
+     const el=doc?.getElementsByTagName('TaxTotal')[0];
+     if(!el) return {ok:false,val:'مفقود',msg:'ملخص الضريبة (TaxTotal) مفقود',fix:'أضف <cac:TaxTotal> مع <cbc:TaxAmount>'};
+     return {ok:true,val:'موجود',msg:'TaxTotal موجود'};
+   }},
+  {id:'TAX-002',cat:'بيانات الضريبة',sev:'error',field:'Tax Category ID',
+   check(doc){
+     const taxCats=doc?.getElementsByTagName('TaxCategory')||[];
+     if(!taxCats.length) return {ok:false,val:'مفقود',msg:'TaxCategory مفقود',fix:'أضف <cac:TaxCategory> داخل TaxSubtotal'};
+     const valid=['S','Z','E','O'];const invalid=[];
+     for(let tc of taxCats){
+       const id=tc.getElementsByTagName('ID')[0]?.textContent;
+       if(id&&!valid.includes(id)) invalid.push(id);
+     }
+     if(invalid.length) return {ok:false,val:invalid.join(', '),msg:`كود ضريبي غير صالح: ${invalid.join(', ')}`,fix:'الأكواد الصالحة: S (خاضع 15%), Z (صفري), E (معفى), O (خارج النطاق)'};
+     const firstID=taxCats[0]?.getElementsByTagName('ID')[0]?.textContent;
+     return {ok:true,val:firstID,msg:`كود التصنيف الضريبي صحيح`};
+   }},
+  {id:'TAX-003',cat:'بيانات الضريبة',sev:'error',field:'Tax Percentage',
+   check(doc){
+     const taxCats=doc?.getElementsByTagName('TaxCategory')||[];
+     for(let tc of taxCats){
+       const id=tc.getElementsByTagName('ID')[0]?.textContent;
+       const pct=parseFloat(tc.getElementsByTagName('Percent')[0]?.textContent);
+       if(id==='S'){
+         if(isNaN(pct)) return {ok:false,val:'مفقود',msg:'نسبة الضريبة مفقودة للكود S',fix:'أضف <cbc:Percent>15.00</cbc:Percent>'};
+         if(pct!==15) return {ok:false,val:pct+'%',msg:`نسبة الضريبة ${pct}% — المعتمد في المملكة 15%`,fix:'غيّر النسبة إلى 15.00'};
+       }
+       if(id==='Z'&&!isNaN(pct)&&pct!==0) return {ok:false,val:pct+'%',msg:'الكود Z (معدل صفري) يجب أن تكون النسبة 0',fix:'غيّر Percent إلى 0.00 للكود Z'};
+       if(id==='E'&&!isNaN(pct)&&pct!==0) return {ok:false,val:pct+'%',msg:'الكود E (معفى) يجب أن تكون النسبة 0',fix:'غيّر Percent إلى 0.00 للكود E'};
+     }
+     const pct=taxCats[0]?.getElementsByTagName('Percent')[0]?.textContent;
+     return {ok:true,val:(pct||'—')+'%',msg:'نسبة الضريبة صحيحة'};
+   }},
+  {id:'TAX-004',cat:'بيانات الضريبة',sev:'error',field:'Tax Amount Calculation',
+   check(doc){
+     const taxTotal=doc?.getElementsByTagName('TaxTotal')[0];
+     if(!taxTotal) return {ok:false,val:'—',msg:'لا يوجد TaxTotal',fix:''};
+     const totalTax=parseFloat(taxTotal.getElementsByTagName('TaxAmount')[0]?.textContent);
+     const subtotals=taxTotal.getElementsByTagName('TaxSubtotal');
+     let sumTax=0;
+     for(let s of subtotals){sumTax+=parseFloat(s.getElementsByTagName('TaxAmount')[0]?.textContent||0);}
+     sumTax=Math.round(sumTax*100)/100;
+     const totalTaxR=Math.round(totalTax*100)/100;
+     if(Math.abs(totalTaxR-sumTax)>0.01) return {ok:false,val:`TaxTotal=${totalTaxR} vs Sum=${sumTax}`,msg:`مجموع ضريبة التفاصيل (${sumTax}) لا يطابق TaxAmount (${totalTaxR})`,fix:'تأكد من أن TaxAmount في TaxTotal = مجموع TaxAmount في جميع TaxSubtotal'};
+
+     // verify taxable * percent = tax
+     for(let s of subtotals){
+       const taxable=parseFloat(s.getElementsByTagName('TaxableAmount')[0]?.textContent||0);
+       const tax=parseFloat(s.getElementsByTagName('TaxAmount')[0]?.textContent||0);
+       const pct=parseFloat(s.getElementsByTagName('Percent')[0]?.textContent||0);
+       if(pct>0){
+         const expected=Math.round(taxable*pct/100*100)/100;
+         const actual=Math.round(Math.abs(tax)*100)/100;
+         if(Math.abs(expected-actual)>0.02) return {ok:false,val:`${taxable} × ${pct}% = ${expected} لكن TaxAmount = ${tax}`,msg:'مبلغ الضريبة لا يطابق حاصل ضرب الوعاء في النسبة',fix:`${taxable} × ${pct}% = ${expected} — صحّح TaxAmount`};
+       }
+     }
+     return {ok:true,val:totalTaxR.toFixed(2),msg:'مبالغ الضريبة صحيحة ومتطابقة'};
+   }},
+
+  // ── Category 8: Monetary Totals ───────────────────────────────────────────
+  {id:'AMT-001',cat:'الإجماليات المالية',sev:'error',field:'LegalMonetaryTotal',
+   check(doc){
+     const el=doc?.getElementsByTagName('LegalMonetaryTotal')[0];
+     if(!el) return {ok:false,val:'مفقود',msg:'LegalMonetaryTotal مفقود',fix:'أضف <cac:LegalMonetaryTotal> مع جميع حقوله'};
+     const required=['LineExtensionAmount','TaxExclusiveAmount','TaxInclusiveAmount','PayableAmount'];
+     const missing=required.filter(f=>!el.getElementsByTagName(f)[0]);
+     if(missing.length) return {ok:false,val:`يوجد لكن ناقص`,msg:`الحقول المفقودة: ${missing.join(', ')}`,fix:'أضف الحقول المفقودة داخل LegalMonetaryTotal'};
+     return {ok:true,val:'مكتمل',msg:'LegalMonetaryTotal موجود ومكتمل'};
+   }},
+  {id:'AMT-002',cat:'الإجماليات المالية',sev:'error',field:'TaxInclusiveAmount Calculation',
+   check(doc){
+     const lmt=doc?.getElementsByTagName('LegalMonetaryTotal')[0];
+     const taxTotal=doc?.getElementsByTagName('TaxTotal')[0];
+     if(!lmt||!taxTotal) return {ok:false,val:'—',msg:'بيانات غير مكتملة',fix:''};
+     const taxEx=parseFloat(lmt.getElementsByTagName('TaxExclusiveAmount')[0]?.textContent||0);
+     const taxInc=parseFloat(lmt.getElementsByTagName('TaxInclusiveAmount')[0]?.textContent||0);
+     const taxAmt=parseFloat(taxTotal.getElementsByTagName('TaxAmount')[0]?.textContent||0);
+     const expected=Math.round((taxEx+taxAmt)*100)/100;
+     const actual=Math.round(taxInc*100)/100;
+     if(Math.abs(expected-actual)>0.02) return {ok:false,val:`${taxEx} + ${taxAmt} = ${expected} لكن TaxInclusiveAmount = ${actual}`,msg:'TaxInclusiveAmount = TaxExclusiveAmount + TaxAmount',fix:`الصحيح: ${taxEx} + ${taxAmt} = ${expected}`};
+     return {ok:true,val:actual.toFixed(2),msg:'TaxInclusiveAmount محسوب بشكل صحيح'};
+   }},
+  {id:'AMT-003',cat:'الإجماليات المالية',sev:'error',field:'LineExtensionAmount vs Lines',
+   check(doc){
+     const lmt=doc?.getElementsByTagName('LegalMonetaryTotal')[0];
+     if(!lmt) return {ok:false,val:'—',msg:'LegalMonetaryTotal مفقود',fix:''};
+     const headerAmt=parseFloat(lmt.getElementsByTagName('LineExtensionAmount')[0]?.textContent||0);
+     const lines=doc?.getElementsByTagName('InvoiceLine')||[];
+     let sumLines=0;
+     for(let l of lines) sumLines+=parseFloat(l.getElementsByTagName('LineExtensionAmount')[0]?.textContent||0);
+     sumLines=Math.round(sumLines*100)/100;
+     const hdr=Math.round(headerAmt*100)/100;
+     if(Math.abs(hdr-sumLines)>0.02) return {ok:false,val:`Header=${hdr} vs Lines=${sumLines}`,msg:`مجموع خطوط الفاتورة (${sumLines}) لا يطابق LineExtensionAmount (${hdr})`,fix:'تأكد من أن مجموع LineExtensionAmount لجميع InvoiceLine = LineExtensionAmount في LegalMonetaryTotal'};
+     return {ok:true,val:hdr.toFixed(2),msg:'إجمالي الخطوط يطابق Header'};
+   }},
+  {id:'AMT-004',cat:'الإجماليات المالية',sev:'warning',field:'Currency Consistency',
+   check(doc){
+     const amts=[...doc?.querySelectorAll('[currencyID]')||[]];
+     const currencies=new Set(amts.map(a=>a.getAttribute('currencyID')));
+     if(currencies.size>2) return {ok:false,val:[...currencies].join(', '),msg:'استخدام أكثر من عملتين في الفاتورة',fix:'يجب استخدام SAR للمبالغ الضريبية على الأقل'};
+     if(currencies.has('USD')||currencies.has('EUR')) return {ok:false,val:[...currencies].join(', '),msg:'عملة غير SAR في مبالغ الفاتورة',fix:'استخدم SAR لجميع مبالغ الضريبة'};
+     return {ok:true,val:[...currencies].join(', '),msg:'العملات متسقة'};
+   }},
+
+  // ── Category 9: Invoice Lines ──────────────────────────────────────────────
+  {id:'LIN-001',cat:'خطوط الفاتورة',sev:'error',field:'InvoiceLine',
+   check(doc){
+     const lines=doc?.getElementsByTagName('InvoiceLine')||[];
+     if(!lines.length) return {ok:false,val:'مفقود',msg:'لا توجد خطوط فاتورة (InvoiceLine)',fix:'أضف <cac:InvoiceLine> واحد على الأقل'};
+     return {ok:true,val:lines.length+' خط',msg:`عدد خطوط الفاتورة: ${lines.length}`};
+   }},
+  {id:'LIN-002',cat:'خطوط الفاتورة',sev:'error',field:'Item Name',
+   check(doc){
+     const lines=doc?.getElementsByTagName('InvoiceLine')||[];
+     const missing=[];
+     for(let l of lines){const name=l.getElementsByTagName('Name')[0]?.textContent;if(!name||!name.trim()) missing.push(l.getElementsByTagName('ID')[0]?.textContent||'?');}
+     if(missing.length) return {ok:false,val:`خطوط بدون اسم: ${missing.join(',')}`,msg:`${missing.length} خط بدون اسم المنتج/الخدمة`,fix:'أضف <cbc:Name> داخل <cac:Item> لكل خط'};
+     return {ok:true,val:lines.length+' منتج',msg:'جميع الخطوط تحتوي على أسماء المنتجات'};
+   }},
+  {id:'LIN-003',cat:'خطوط الفاتورة',sev:'error',field:'Line Price × Qty = Amount',
+   check(doc){
+     const lines=doc?.getElementsByTagName('InvoiceLine')||[];
+     const errors=[];
+     for(let l of lines){
+       const id=l.getElementsByTagName('ID')[0]?.textContent||'?';
+       const qty=parseFloat(l.getElementsByTagName('InvoicedQuantity')[0]?.textContent||0);
+       const price=parseFloat(l.getElementsByTagName('PriceAmount')[0]?.textContent||0);
+       const ext=parseFloat(l.getElementsByTagName('LineExtensionAmount')[0]?.textContent||0);
+       if(qty&&price){
+         const expected=Math.round(qty*price*100)/100;
+         const actual=Math.round(Math.abs(ext)*100)/100;
+         if(Math.abs(expected-actual)>0.02) errors.push(`خط ${id}: ${qty}×${price}=${expected} لكن Amount=${ext}`);
+       }
+     }
+     if(errors.length) return {ok:false,val:errors[0],msg:`حساب خاطئ في ${errors.length} خط`,fix:'LineExtensionAmount = InvoicedQuantity × PriceAmount'};
+     return {ok:true,val:lines.length+' خط',msg:'حسابات خطوط الفاتورة صحيحة'};
+   }},
+  {id:'LIN-004',cat:'خطوط الفاتورة',sev:'warning',field:'ClassifiedTaxCategory',
+   check(doc){
+     const lines=doc?.getElementsByTagName('InvoiceLine')||[];
+     const missing=[];
+     for(let l of lines){const tc=l.getElementsByTagName('ClassifiedTaxCategory')[0];if(!tc) missing.push(l.getElementsByTagName('ID')[0]?.textContent||'?');}
+     if(missing.length) return {ok:false,val:`خطوط: ${missing.join(',')}`,msg:`${missing.length} خط بدون ClassifiedTaxCategory`,fix:'أضف <cac:ClassifiedTaxCategory> داخل Item لكل خط'};
+     return {ok:true,val:'مكتمل',msg:'جميع الخطوط تحتوي على ClassifiedTaxCategory'};
+   }},
+
+  // ── Category 10: ZATCA Compliance ──────────────────────────────────────────
+  {id:'ZAT-001',cat:'توافق ZATCA',sev:'error',field:'Supplier VAT Format',
+   check(doc){
+     const supplier=doc?.getElementsByTagName('AccountingSupplierParty')[0];
+     if(!supplier) return {ok:false,val:'—',msg:'لا يوجد مورد',fix:''};
+     const taxScheme=supplier.getElementsByTagName('TaxScheme')[0];
+     const schemeID=taxScheme?.getElementsByTagName('ID')[0]?.textContent;
+     if(schemeID!=='VAT') return {ok:false,val:schemeID||'مفقود',msg:`TaxScheme ID "${schemeID}" — يجب أن يكون VAT`,fix:'أضف <cbc:ID>VAT</cbc:ID> داخل TaxScheme'};
+     return {ok:true,val:'VAT',msg:'TaxScheme صحيح'};
+   }},
+  {id:'ZAT-002',cat:'توافق ZATCA',sev:'warning',field:'Building Number',
+   check(doc){
+     const addrs=doc?.getElementsByTagName('PostalAddress')||[];
+     const missing=[];
+     for(let a of addrs){const bn=a.getElementsByTagName('BuildingNumber')[0]?.textContent;if(!bn||!/^\d{4}$/.test(bn)) missing.push(bn||'مفقود');}
+     if(missing.length) return {ok:false,val:missing[0],msg:'BuildingNumber يجب أن يكون 4 أرقام بالضبط',fix:'أضف BuildingNumber من 4 أرقام (النظام السعودي للعناوين الوطنية)'};
+     return {ok:true,val:'صحيح',msg:'BuildingNumber صحيح (4 أرقام)'};
+   }},
+  {id:'ZAT-003',cat:'توافق ZATCA',sev:'note',field:'Postal Zone',
+   check(doc){
+     const addrs=doc?.getElementsByTagName('PostalAddress')||[];
+     for(let a of addrs){
+       const pz=a.getElementsByTagName('PostalZone')[0]?.textContent;
+       if(!pz) return {ok:false,val:'مفقود',msg:'PostalZone (الرمز البريدي) مفقود',fix:'أضف <cbc:PostalZone> من 5 أرقام'};
+       if(!/^\d{5}$/.test(pz)) return {ok:false,val:pz,msg:'الرمز البريدي يجب أن يكون 5 أرقام',fix:'الرمز البريدي السعودي من 5 أرقام'};
+     }
+     return {ok:true,val:'صحيح',msg:'الرمز البريدي صحيح'};
+   }},
+  {id:'ZAT-004',cat:'توافق ZATCA',sev:'note',field:'Country Code',
+   check(doc){
+     const codes=doc?.getElementsByTagName('IdentificationCode')||[];
+     for(let c of codes){if(c.textContent!=='SA') return {ok:false,val:c.textContent,msg:`رمز الدولة "${c.textContent}" غير صحيح`,fix:'رمز المملكة العربية السعودية: SA'};}
+     return {ok:true,val:'SA',msg:'رمز الدولة صحيح'};
+   }},
+  {id:'ZAT-005',cat:'توافق ZATCA',sev:'warning',field:'Note Language',
+   check(doc){
+     const notes=doc?.getElementsByTagName('Note')||[];
+     for(let n of notes){const lang=n.getAttribute('languageID');if(!lang) return {ok:false,val:n.textContent?.slice(0,30),msg:'سمة languageID مفقودة في عنصر Note',fix:'أضف languageID="ar" للنصوص العربية'};  }
+     return {ok:true,val:'موجود',msg:'سمة languageID موجودة في Note'};
+   }},
+];
+
+// Helper
+function gv(doc, tag) { return doc?.getElementsByTagName(tag)[0]?.textContent || ''; }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// RUN VALIDATION
+// ══════════════════════════════════════════════════════════════════════════════
+function runValidation() {
+  if (!currentXML) return;
+
+  // Parse
+  const parser = new DOMParser();
+  const doc = currentXML ? parser.parseFromString(currentXML, 'text/xml') : null;
+  currentDoc = doc;
+
+  // Run all rules
+  const results = [];
+  for (const rule of RULES) {
+    try {
+      const r = rule.check(doc, currentXML);
+      results.push({ rule, result: r });
+    } catch(e) {
+      results.push({ rule, result: { ok: false, val: 'خطأ في الفحص', msg: e.message, fix: '' } });
+    }
+  }
+  validationResults = results;
+
+  // Build tree
+  buildTree(doc);
+
+  // Update score
+  updateScore(results);
+
+  // Render
+  renderMainContent();
+
+  // Switch to report
+  document.querySelectorAll('.ttab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.ttab')[0].classList.add('active');
+  currentTab = 'report';
+}
+
+function updateScore(results) {
+  const errors   = results.filter(r => !r.result.ok && r.rule.sev === 'error').length;
+  const warnings = results.filter(r => !r.result.ok && r.rule.sev === 'warning').length;
+  const notes    = results.filter(r => !r.result.ok && r.rule.sev === 'note').length;
+  const passed   = results.filter(r => r.result.ok).length;
+  const total    = results.length;
+  const score    = Math.max(0, Math.round((passed / total) * 100 - errors * 3 - warnings * 1));
+
+  const color = score >= 90 ? '#4ade80' : score >= 70 ? '#fbbf24' : '#f87171';
+
+  document.getElementById('score-content').innerHTML = `
+    <div class="score-ring">
+      <div class="score-num" style="color:${color}">${score}</div>
+      <div class="score-label">نسبة التوافق %</div>
+    </div>
+    <div class="score-bars">
+      <div class="sbar"><div class="sbar-label">الأخطاء</div><div class="sbar-track"><div class="sbar-fill" style="width:${Math.min(errors/RULES.length*100*3,100)}%;background:#f87171"></div></div><div class="sbar-val" style="color:#f87171">${errors}</div></div>
+      <div class="sbar"><div class="sbar-label">التحذيرات</div><div class="sbar-track"><div class="sbar-fill" style="width:${Math.min(warnings/RULES.length*100*3,100)}%;background:#fbbf24"></div></div><div class="sbar-val" style="color:#fbbf24">${warnings}</div></div>
+      <div class="sbar"><div class="sbar-label">الملاحظات</div><div class="sbar-track"><div class="sbar-fill" style="width:${Math.min(notes/RULES.length*100*3,100)}%;background:#60a5fa"></div></div><div class="sbar-val" style="color:#60a5fa">${notes}</div></div>
+      <div class="sbar"><div class="sbar-label">ناجح</div><div class="sbar-track"><div class="sbar-fill" style="width:${passed/total*100}%;background:#4ade80"></div></div><div class="sbar-val" style="color:#4ade80">${passed}</div></div>
+    </div>
+    <div style="margin-top:12px;padding:10px;background:${score>=90?'rgba(74,222,128,.1)':score>=70?'rgba(251,191,36,.1)':'rgba(248,113,113,.1)'};border-radius:8px;text-align:center;font-size:12px;color:${color}">
+      ${score>=90?'✅ ممتاز — الفاتورة متوافقة مع ZATCA':score>=70?'⚠️ جيد — يوجد تحذيرات تحتاج مراجعة':'❌ يوجد أخطاء جوهرية — الفاتورة غير متوافقة'}
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// RENDER MAIN CONTENT
+// ══════════════════════════════════════════════════════════════════════════════
+function renderMainContent() {
+  if (currentTab === 'report') renderReport();
+  else if (currentTab === 'xml') renderXMLView();
+  else if (currentTab === 'rules') renderRules();
+}
+
+function renderReport() {
+  if (!validationResults) { document.getElementById('main-content').innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-t">لا يوجد تقرير</div><div class="empty-s">ارفع ملف XML وشغّل الفحص</div></div>'; return; }
+
+  const errors   = validationResults.filter(r => !r.result.ok && r.rule.sev === 'error');
+  const warnings = validationResults.filter(r => !r.result.ok && r.rule.sev === 'warning');
+  const notes    = validationResults.filter(r => !r.result.ok && r.rule.sev === 'note');
+  const passed   = validationResults.filter(r => r.result.ok);
+  const total    = validationResults.length;
+  const score    = Math.max(0, Math.round((passed.length/total)*100 - errors.length*3 - warnings.length));
+
+  let html = `
+    <div class="report-header">
+      <div class="rh-card"><div class="rh-num rh-e">${errors.length}</div><div class="rh-label">❌ أخطاء</div></div>
+      <div class="rh-card"><div class="rh-num rh-w">${warnings.length}</div><div class="rh-label">⚠️ تحذيرات</div></div>
+      <div class="rh-card"><div class="rh-num rh-n">${notes.length}</div><div class="rh-label">ℹ️ ملاحظات</div></div>
+      <div class="rh-card"><div class="rh-num rh-s">${score}%</div><div class="rh-label">✅ نسبة التوافق</div></div>
+    </div>`;
+
+  // Group by category
+  const cats = {};
+  for (const {rule,result} of validationResults) {
+    if (!cats[rule.cat]) cats[rule.cat] = [];
+    cats[rule.cat].push({rule,result});
+  }
+
+  for (const [cat, items] of Object.entries(cats)) {
+    const catErrors   = items.filter(i => !i.result.ok && i.rule.sev === 'error').length;
+    const catWarnings = items.filter(i => !i.result.ok && i.rule.sev === 'warning').length;
+    const catNotes    = items.filter(i => !i.result.ok && i.rule.sev === 'note').length;
+    const catPassed   = items.filter(i => i.result.ok).length;
+
+    const countBadges = [
+      catErrors   ? `<span style="background:rgba(248,113,113,.2);color:#f87171;padding:2px 8px;border-radius:4px;font-size:11px">${catErrors} خطأ</span>` : '',
+      catWarnings ? `<span style="background:rgba(251,191,36,.2);color:#fbbf24;padding:2px 8px;border-radius:4px;font-size:11px">${catWarnings} تحذير</span>` : '',
+      catNotes    ? `<span style="background:rgba(96,165,250,.2);color:#60a5fa;padding:2px 8px;border-radius:4px;font-size:11px">${catNotes} ملاحظة</span>` : '',
+      `<span style="background:rgba(74,222,128,.15);color:#4ade80;padding:2px 8px;border-radius:4px;font-size:11px">${catPassed} ناجح</span>`,
+    ].filter(Boolean).join('');
+
+    html += `<div class="section">
+      <div class="section-hdr" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+        <div class="section-title">📂 ${cat}</div>
+        <div class="section-count">${countBadges}</div>
+      </div>
+      <div class="section-body">`;
+
+    for (const {rule, result} of items) {
+      const sev = rule.sev;
+      const icon = result.ok ? '✅' : sev==='error' ? '❌' : sev==='warning' ? '⚠️' : 'ℹ️';
+      const cls  = result.ok ? 'ri-s' : sev==='error' ? 'ri-e' : sev==='warning' ? 'ri-w' : 'ri-n';
+      html += `<div class="result-item ${cls}">
+        <div class="ri-icon">${icon}</div>
+        <div>
+          <div class="ri-field">${rule.field} <span style="font-size:10px;color:var(--muted2);font-weight:400">${rule.id}</span></div>
+          ${result.val ? `<div class="ri-val" title="${result.val}">${result.val.slice(0,60)}${result.val.length>60?'...':''}</div>` : ''}
+          <div class="ri-msg">${result.msg}</div>
+          ${!result.ok && result.fix ? `<div class="ri-fix">${result.fix}</div>` : ''}
+        </div>
+      </div>`;
+    }
+    html += `</div></div>`;
+  }
+
+  document.getElementById('main-content').innerHTML = html;
+}
+
+function renderXMLView() {
+  if (!currentXML) { document.getElementById('main-content').innerHTML = '<div class="empty"><div class="empty-icon">📄</div><div class="empty-t">لا يوجد XML</div></div>'; return; }
+  const highlighted = syntaxHighlight(currentXML);
+  document.getElementById('main-content').innerHTML = `
+    <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center">
+      <input type="text" id="xml-find" placeholder="بحث في XML..." oninput="xmlSearch(this.value)"
+        style="padding:7px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;width:260px;direction:ltr">
+      <span id="xml-find-count" style="font-size:11px;color:var(--muted)"></span>
+      <button class="btn" onclick="copyAll()" style="margin-right:auto">📋 نسخ الكل</button>
+    </div>
+    <div class="xml-view" id="xml-view-content">${highlighted}</div>`;
+}
+
+function renderRules() {
+  const grouped = {};
+  for (const r of RULES) { if (!grouped[r.cat]) grouped[r.cat]=[]; grouped[r.cat].push(r); }
+  let html = `<div style="margin-bottom:14px;font-size:13px;color:var(--muted)">إجمالي القواعد: <strong style="color:var(--text)">${RULES.length}</strong> قاعدة — مصممة للتوسع بإضافة قواعد جديدة</div>`;
+  for (const [cat,rules] of Object.entries(grouped)) {
+    const sevCount = {error:0,warning:0,note:0};
+    rules.forEach(r => sevCount[r.sev]++);
+    html += `<div class="section">
+      <div class="section-hdr" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+        <div class="section-title">📂 ${cat} (${rules.length} قاعدة)</div>
+        <div class="section-count">
+          ${sevCount.error?`<span style="color:#f87171;font-size:11px">${sevCount.error} أخطاء</span>`:''}
+          ${sevCount.warning?`<span style="color:#fbbf24;font-size:11px">${sevCount.warning} تحذيرات</span>`:''}
+          ${sevCount.note?`<span style="color:#60a5fa;font-size:11px">${sevCount.note} ملاحظات</span>`:''}
+        </div>
+      </div>
+      <div class="section-body">
+        <table style="width:100%;font-size:12px;border-collapse:collapse">
+          <thead><tr style="color:var(--muted);border-bottom:1px solid var(--border)">
+            <th style="padding:6px 8px;text-align:right">المعرف</th>
+            <th style="padding:6px 8px;text-align:right">الحقل</th>
+            <th style="padding:6px 8px;text-align:center">الخطورة</th>
+          </tr></thead>
+          <tbody>${rules.map(r=>`<tr style="border-bottom:1px solid rgba(255,255,255,.05)">
+            <td style="padding:6px 8px;font-family:monospace;color:var(--accent)">${r.id}</td>
+            <td style="padding:6px 8px;color:var(--text)">${r.field}</td>
+            <td style="padding:6px 8px;text-align:center">
+              <span style="padding:2px 8px;border-radius:4px;font-size:11px;background:${r.sev==='error'?'rgba(248,113,113,.2)':r.sev==='warning'?'rgba(251,191,36,.2)':'rgba(96,165,250,.2)'};color:${r.sev==='error'?'#f87171':r.sev==='warning'?'#fbbf24':'#60a5fa'}">${r.sev==='error'?'خطأ':r.sev==='warning'?'تحذير':'ملاحظة'}</span>
+            </td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+  document.getElementById('main-content').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// XML SYNTAX HIGHLIGHT
+// ══════════════════════════════════════════════════════════════════════════════
+function syntaxHighlight(xml) {
+  const escaped = xml.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return escaped
+    .replace(/(&lt;\?[^?]*\?&gt;)/g, '<span class="xv-comment">$1</span>')
+    .replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="xv-comment">$1</span>')
+    .replace(/(&lt;\/?)([\w:]+)/g, '<span class="xv-tag">$1$2</span>')
+    .replace(/([\w:]+)(=&quot;)([^&]*)(&quot;)/g, '<span class="xv-attr">$1</span>$2<span class="xv-str">$3</span>$4')
+    .replace(/(&gt;)([^&lt;]+)(&lt;)/g, '$1<span class="xv-val">$2</span>$3');
+}
+
+function xmlSearch(q) {
+  const el = document.getElementById('xml-view-content');
+  const cnt = document.getElementById('xml-find-count');
+  if (!el) return;
+  if (!q) { el.innerHTML = syntaxHighlight(currentXML); cnt.textContent = ''; return; }
+  const regex = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'gi');
+  const highlighted = syntaxHighlight(currentXML);
+  let count = 0;
+  const replaced = highlighted.replace(regex, m => { count++; return `<mark class="tree-highlight">${m}</mark>`; });
+  el.innerHTML = replaced;
+  cnt.textContent = count ? `${count} نتيجة` : 'لا توجد نتائج';
+}
+
+function copyAll() { navigator.clipboard.writeText(currentXML).then(() => alert('تم نسخ XML')); }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TREE VIEW
+// ══════════════════════════════════════════════════════════════════════════════
+function buildTree(doc) {
+  if (!doc) { document.getElementById('tree-container').innerHTML = '<div style="padding:14px;color:var(--muted);font-size:12px">تعذّر بناء الشجرة</div>'; return; }
+  const container = document.getElementById('tree-container');
+  container.innerHTML = '';
+  const rootEl = createTreeNode(doc.documentElement, [], 0);
+  container.appendChild(rootEl);
+}
+
+function createTreeNode(element, path, depth) {
+  const div = document.createElement('div');
+  div.className = 'tree-node';
+
+  const localName = element.localName || element.nodeName;
+  const children = [...element.childNodes].filter(n => n.nodeType === 1);
+  const textContent = [...element.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent.trim()).join('').trim();
+  const attrs = [...element.attributes||[]];
+  const currentPath = [...path, localName];
+
+  const row = document.createElement('div');
+  row.className = 'tree-row';
+
+  const toggle = document.createElement('span');
+  toggle.className = 'tree-toggle';
+  toggle.textContent = children.length ? '▶' : ' ';
+
+  const tag = document.createElement('span');
+  tag.className = 'tree-tag';
+  tag.textContent = `<${localName}`;
+
+  const attrSpan = document.createElement('span');
+  attrSpan.className = 'tree-attr';
+  if (attrs.length) {
+    attrSpan.textContent = ' ' + attrs.slice(0,2).map(a => `${a.name}="${a.value.slice(0,20)}${a.value.length>20?'...':''}"` ).join(' ') + (attrs.length>2?' …':'');
+  }
+
+  const close = document.createElement('span');
+  close.className = 'tree-tag';
+  close.textContent = children.length ? '>' : '/>';
+
+  const valSpan = document.createElement('span');
+  valSpan.className = 'tree-val';
+  if (textContent && !children.length) valSpan.textContent = ' ' + textContent.slice(0,50) + (textContent.length>50?'...':'');
+
+  row.appendChild(toggle);
+  row.appendChild(tag);
+  row.appendChild(attrSpan);
+  row.appendChild(close);
+  row.appendChild(valSpan);
+  div.appendChild(row);
+
+  // Children container
+  const childrenDiv = document.createElement('div');
+  childrenDiv.className = 'tree-children';
+  childrenDiv.style.display = depth < 2 ? 'block' : 'none';
+
+  if (children.length) {
+    toggle.textContent = depth < 2 ? '▼' : '▶';
+    toggle.style.cursor = 'pointer';
+    toggle.onclick = (e) => {
+      e.stopPropagation();
+      const open = childrenDiv.style.display !== 'none';
+      childrenDiv.style.display = open ? 'none' : 'block';
+      toggle.textContent = open ? '▶' : '▼';
+    };
+    for (const child of children) {
+      childrenDiv.appendChild(createTreeNode(child, currentPath, depth + 1));
+    }
+    div.appendChild(childrenDiv);
+  }
+
+  // Click to select node
+  row.onclick = () => {
+    document.querySelectorAll('.tree-row.selected').forEach(r => r.classList.remove('selected'));
+    row.classList.add('selected');
+    showNodeDetail(element, currentPath);
+    switchSide('tree', document.querySelectorAll('.tab-s')[2]);
+  };
+
+  return div;
+}
+
+function showNodeDetail(element, path) {
+  const panel = document.getElementById('node-panel');
+  const localName = element.localName || element.nodeName;
+  const textContent = element.textContent?.trim() || '';
+  const attrs = [...element.attributes||[]];
+
+  panel.style.display = 'block';
+  document.getElementById('np-path').textContent = path.join(' → ');
+  document.getElementById('np-tag').textContent = `<${localName}>`;
+  document.getElementById('np-val').textContent = textContent.slice(0,200) + (textContent.length>200?'...':'');
+  document.getElementById('np-attrs').innerHTML = attrs.map(a =>
+    `<span class="np-attr">${a.name}="${a.value.slice(0,40)}"</span>`
+  ).join('');
+  selectedNode = { localName, textContent, path };
+}
+
+function copyNodeVal() {
+  if (selectedNode) navigator.clipboard.writeText(selectedNode.textContent).then(() => alert('تم النسخ'));
+}
+
+function searchTree(q) {
+  treeSearchQuery = q;
+  if (!currentDoc) return;
+  const container = document.getElementById('tree-container');
+  if (!q) { buildTree(currentDoc); return; }
+  // Expand and highlight matching nodes
+  const allRows = container.querySelectorAll('.tree-row');
+  allRows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    if (text.includes(q.toLowerCase())) {
+      row.style.background = 'rgba(56,189,248,.1)';
+      // expand parents
+      let parent = row.parentElement;
+      while (parent && container && parent !== container) {
+        if (parent.classList.contains('tree-children')) parent.style.display = 'block';
+        parent = parent.parentElement;
+      }
+    } else {
+      row.style.background = '';
+    }
+  });
+}
+
+// ══ Mobile Panel Toggle ═══════════════════════════════════════════════════
+let mobilePanelOpen = false;
+function toggleMobilePanel() {
+  mobilePanelOpen = !mobilePanelOpen;
+  const panels = ['side-upload','side-score','side-tree'];
+  const activePanel = panels.find(p => {
+    const el = document.getElementById(p);
+    return el && el.style.display !== 'none';
+  }) || 'side-upload';
+  const el = document.getElementById(activePanel);
+  if (el) {
+    if (mobilePanelOpen) {
+      el.classList.add('mobile-show');
+      document.getElementById('mobile-panel-btn').textContent = '✕ إغلاق';
+    } else {
+      el.classList.remove('mobile-show');
+      document.getElementById('mobile-panel-btn').textContent = '📂 رفع / شجرة';
+    }
+  }
+}
+// Close mobile panel when tab switches
+document.querySelectorAll('.ttab').forEach(t => {
+  t.addEventListener('click', () => {
+    mobilePanelOpen = false;
+    ['side-upload','side-score','side-tree'].forEach(p => {
+      document.getElementById(p)?.classList.remove('mobile-show');
+    });
+    const btn = document.getElementById('mobile-panel-btn');
+    if (btn) btn.textContent = '📂 رفع / شجرة';
+  });
+});
+</script>
+</body>
+</html>

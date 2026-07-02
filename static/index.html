@@ -1,0 +1,2460 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>مراقب الامتثال الضريبي</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;direction:rtl;background:#f0f4ff;color:#1e293b;min-height:100vh}
+:root{--primary:#1a1a2e;--accent:#4f8ef7;--success:#16a34a;--warning:#d97706;--danger:#dc2626;--bg:#f0f4ff;--card:#fff;--border:#e2e8f0;--muted:#64748b;--text:#1e293b}
+
+/* Layout */
+.app{display:flex;height:100vh}
+.sidebar{width:230px;background:var(--primary);flex-shrink:0;display:flex;flex-direction:column;overflow-y:auto}
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+
+/* Sidebar */
+.logo{padding:18px 16px 14px;border-bottom:1px solid #334155}
+.logo-t{font-size:15px;font-weight:700;color:#fff}
+.logo-s{font-size:11px;color:#93c5fd;margin-top:2px}
+.nav{padding:8px;flex:1}
+.nav-g{font-size:10px;color:#475569;padding:10px 10px 4px;text-transform:uppercase;letter-spacing:.5px}
+.nav-a{display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:#cbd5e1;margin-bottom:1px;transition:all .13s;border:none;background:none;width:100%;text-align:right}
+.nav-a:hover{background:#334155;color:#fff}
+.nav-a.active{background:var(--accent);color:#fff}
+.nav-a svg{width:16px;height:16px;flex-shrink:0}
+.nav-sep{height:1px;background:#334155;margin:6px 12px}
+
+/* Top bar */
+.topbar{background:#fff;border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.search-wrap{flex:1;max-width:380px;position:relative}
+.search-wrap input{width:100%;padding:7px 12px 7px 36px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#f8fafc;color:var(--text)}
+.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);width:16px;height:16px}
+.topbar-right{display:flex;align-items:center;gap:10px;margin-right:auto}
+.alert-badge{position:relative;cursor:pointer}
+.alert-badge span{position:absolute;top:-4px;left:-4px;background:var(--danger);color:#fff;font-size:10px;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center}
+
+/* Content */
+.content{flex:1;overflow-y:auto;padding:20px}
+.page{display:none}.page.active{display:block}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.page-title{font-size:18px;font-weight:700;color:var(--primary)}
+.breadcrumb{font-size:12px;color:var(--muted);margin-bottom:4px}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px}
+.stat-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.stat-info .stat-v{font-size:24px;font-weight:700}
+.stat-info .stat-l{font-size:12px;color:var(--muted);margin-top:2px}
+.ic-blue{background:#dbeafe;color:var(--accent)}
+.ic-green{background:#dcfce7;color:var(--success)}
+.ic-red{background:#fee2e2;color:var(--danger)}
+.ic-yellow{background:#fef9c3;color:var(--warning)}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:14px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-title{font-size:14px;font-weight:600;color:var(--primary)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
+
+/* Table */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{padding:9px 12px;color:var(--muted);font-weight:500;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap;background:#f8fafc}
+td{padding:9px 12px;border-bottom:1px solid #f1f5f9;color:var(--text);text-align:right}
+tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#f8fafc}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600;white-space:nowrap}
+.b-g{background:#dcfce7;color:#15803d}.b-r{background:#fee2e2;color:#b91c1c}
+.b-y{background:#fef9c3;color:#a16207}.b-b{background:#dbeafe;color:#1d4ed8}
+.b-gray{background:#f1f5f9;color:#475569}.b-p{background:#f3e8ff;color:#7c3aed}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;font-size:13px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:var(--card);color:var(--text);transition:all .13s;font-family:inherit;white-space:nowrap}
+.btn:hover{background:#f8fafc}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{background:#3b7de8}
+.btn-success{background:var(--success);color:#fff;border-color:var(--success)}
+.btn-danger{background:#fee2e2;color:#b91c1c;border-color:#fecaca}
+.btn-danger:hover{background:#fecaca}
+.btn-sm{padding:4px 10px;font-size:11px}
+.btn-icon{width:30px;height:30px;padding:0;justify-content:center;border-radius:6px}
+
+/* Forms */
+.fg{margin-bottom:11px}
+.fg label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+.fg input,.fg select,.fg textarea{width:100%;padding:8px 11px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff;color:var(--text);font-family:inherit;transition:border .13s}
+.fg input[type=date],.fg input[type=time]{direction:ltr;text-align:left}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,142,247,.1)}
+.fg textarea{resize:vertical;min-height:80px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px}
+
+/* Client list */
+.client-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;cursor:pointer;transition:background .13s;margin-bottom:4px;border:1px solid transparent}
+.client-item:hover{background:#f0f4ff;border-color:var(--border)}
+.client-item.selected{background:#dbeafe;border-color:var(--accent)}
+.client-avatar{width:40px;height:40px;border-radius:10px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0}
+.client-name{font-size:13px;font-weight:600;color:var(--text)}
+.client-sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* Match result */
+.match-box{border-radius:12px;padding:18px;text-align:center;margin-bottom:14px;border:2px solid transparent}
+.match-ok{background:#dcfce7;border-color:#86efac}.match-diff{background:#fee2e2;border-color:#fca5a5}.match-warn{background:#fef9c3;border-color:#fde047}
+.match-title{font-size:26px;font-weight:700;margin-bottom:6px}
+.match-sub{font-size:13px;margin-bottom:14px}
+.match-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.match-cell{background:rgba(255,255,255,.7);border-radius:8px;padding:8px}
+.match-cell-l{font-size:11px;color:var(--muted);margin-bottom:4px}
+.match-cell-v{font-size:15px;font-weight:700}
+
+/* Timeline */
+.timeline{position:relative;padding-right:20px}
+.timeline::before{content:'';position:absolute;right:6px;top:0;bottom:0;width:2px;background:var(--border)}
+.tl-item{position:relative;padding:0 20px 18px 0}
+.tl-dot{position:absolute;right:-14px;top:4px;width:12px;height:12px;border-radius:50%;border:2px solid var(--card);flex-shrink:0}
+.tl-dot-g{background:var(--success)}.tl-dot-y{background:var(--warning)}.tl-dot-r{background:var(--danger)}.tl-dot-b{background:var(--accent)}
+.tl-date{font-size:11px;color:var(--muted);margin-bottom:2px}
+.tl-title{font-size:13px;font-weight:500;color:var(--text)}
+.tl-sub{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* Tabs */
+.tabs{display:flex;gap:2px;border-bottom:2px solid var(--border);margin-bottom:16px}
+.tab{padding:9px 16px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .13s;font-family:inherit;background:none;border-top:none;border-left:none;border-right:none}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+
+/* Modal */
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center}
+.modal-ov.open{display:flex}
+.modal{background:#fff;border-radius:14px;padding:22px;width:560px;max-width:96vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal-lg{width:700px}
+.modal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.modal-title{font-size:15px;font-weight:600;color:var(--primary)}
+.modal-x{background:none;border:none;cursor:pointer;color:var(--muted);font-size:20px;line-height:1;padding:2px}
+
+/* Alert strip */
+.alert-strip{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-radius:10px;margin-bottom:8px;font-size:13px}
+.as-d{background:#fee2e2;color:#b91c1c}.as-w{background:#fef9c3;color:#a16207}
+.as-s{background:#dcfce7;color:#15803d}.as-i{background:#dbeafe;color:#1d4ed8}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:11px 22px;border-radius:10px;font-size:13px;z-index:999;display:none;box-shadow:0 4px 20px rgba(0,0,0,.2);color:#fff;min-width:200px;text-align:center}
+
+/* Progress */
+.prog-bar{height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;margin-top:8px}
+.prog-fill{height:100%;border-radius:3px;background:var(--success);transition:width .3s}
+
+/* Empty state */
+.empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty-icon{font-size:40px;margin-bottom:10px}
+.empty-t{font-size:14px;font-weight:500;margin-bottom:4px}
+.empty-s{font-size:12px}
+
+/* XML Checker */
+.xml-result{font-family:monospace;font-size:12px;direction:ltr;text-align:left;background:#0f172a;color:#e2e8f0;padding:16px;border-radius:10px;max-height:340px;overflow-y:auto;line-height:1.7}
+.xml-ok{color:#4ade80}.xml-err{color:#f87171}.xml-warn{color:#fbbf24}.xml-info{color:#60a5fa}
+
+/* ═══════════════ MOBILE RESPONSIVE ═══════════════ */
+/* Hamburger button */
+.hamburger{display:none;position:fixed;top:12px;right:12px;z-index:600;background:var(--primary);border:none;border-radius:8px;width:40px;height:40px;cursor:pointer;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+.hamburger span{display:block;width:20px;height:2px;background:#fff;border-radius:2px;transition:all .3s}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400}
+
+@media (max-width: 768px) {
+  /* Show hamburger */
+  .hamburger{display:flex}
+
+  /* Sidebar: off-canvas by default */
+  .sidebar{
+    position:fixed;right:-240px;top:0;bottom:0;z-index:500;
+    width:240px;transition:right .3s ease;box-shadow:none
+  }
+  .sidebar.open{right:0;box-shadow:-4px 0 20px rgba(0,0,0,.3)}
+  .sidebar-overlay.open{display:block}
+
+  /* Main takes full width */
+  .main{width:100%}
+
+  /* Topbar padding for hamburger */
+  .topbar{padding:10px 12px 10px 56px}
+  .topbar .search-wrap{max-width:100%}
+
+  /* Content padding */
+  .content{padding:12px}
+
+  /* Page header */
+  .page-header{flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .page-title{font-size:16px}
+
+  /* Stats: 2 columns on mobile */
+  .stats{grid-template-columns:repeat(2,1fr) !important;gap:8px}
+  .stat{padding:10px 12px}
+  .stat-v{font-size:20px}
+
+  /* Two/three columns → single */
+  .two{grid-template-columns:1fr !important;gap:10px}
+  .three{grid-template-columns:1fr 1fr !important;gap:8px}
+
+  /* Form rows */
+  .form-row{grid-template-columns:1fr !important}
+  .form-row-3{grid-template-columns:1fr 1fr !important}
+
+  /* Cards */
+  .card{padding:12px 14px;margin-bottom:10px}
+  .card-title{font-size:13px}
+
+  /* Tables: horizontal scroll */
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{min-width:600px}
+  th,td{padding:7px 10px;font-size:12px;white-space:nowrap}
+
+  /* Buttons */
+  .btn{padding:7px 12px;font-size:12px}
+  .btn-sm{padding:4px 8px;font-size:11px}
+
+  /* Modals: full width */
+  .modal{width:95vw !important;max-width:95vw;padding:16px;margin:10px}
+  .modal-lg{width:95vw !important}
+  .modal-hdr{margin-bottom:14px}
+
+  /* Client detail panel in full width */
+  #client-detail-panel{min-width:0}
+
+  /* Tabs: scrollable */
+  .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap}
+  .tab{white-space:nowrap;padding:8px 12px;font-size:12px}
+
+  /* Match result grid */
+  .match-grid{grid-template-columns:1fr 1fr !important}
+  .result-grid{grid-template-columns:1fr !important}
+
+  /* Hide date in topbar on very small screens */
+  #topbar-date{display:none}
+
+  /* Alerts */
+  .alert-strip{font-size:12px;padding:9px 10px}
+
+  /* Checklist items */
+  .chk-item{padding:7px 0}
+
+  /* Nav items font */
+  .nav-a{font-size:12px;padding:7px 10px}
+
+  /* Page client split → stacked */
+  #page-clients .two{grid-template-columns:1fr !important}
+  #page-visits .two{grid-template-columns:1fr !important}
+  #page-devices .two{grid-template-columns:1fr !important}
+
+  /* Device cards */
+  .device-card{padding:10px}
+
+  /* Empty state */
+  .empty{padding:30px 16px}
+  .empty-icon{font-size:32px}
+}
+
+@media (max-width: 400px) {
+  .stats{grid-template-columns:1fr 1fr !important}
+  .three{grid-template-columns:1fr !important}
+  .content{padding:8px}
+  .page-title{font-size:15px}
+  .stat-v{font-size:18px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ══ Sidebar ══ -->
+<!-- Mobile hamburger -->
+<button class="hamburger" id="hamburger-btn" onclick="toggleSidebar()" aria-label="القائمة">
+  <span></span><span></span><span></span>
+</button>
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<nav class="sidebar" id="main-sidebar">
+  <div class="logo"><div class="logo-t">⚖️ امتثال ضريبي</div><div class="logo-s">نظام المراجعة المتكاملة</div></div>
+  <div class="nav">
+    <div class="nav-g">رئيسي</div>
+    <button class="nav-a active" onclick="showPage('dashboard')" id="nav-dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>لوحة التحكم
+    </button>
+    <button class="nav-a" onclick="showPage('clients')" id="nav-clients">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>العملاء
+    </button>
+    <div class="nav-sep"></div>
+    <div class="nav-g">العمليات</div>
+    <button class="nav-a" onclick="showPage('matching')" id="nav-matching">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3m8 0h3a2 2 0 0 0 2-2v-3"/></svg>المطابقة
+    </button>
+    <button class="nav-a" onclick="showPage('visits')" id="nav-visits">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>الزيارات
+    </button>
+    <button class="nav-a" onclick="showPage('checklists')" id="nav-checklists">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>قوائم المراجعة
+    </button>
+    <button class="nav-a" onclick="showPage('efatura')" id="nav-efatura">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>الفوترة الإلكترونية
+    </button>
+    <div class="nav-sep"></div>
+    <div class="nav-g">الإدارة</div>
+    <button class="nav-a" onclick="showPage('contracts')" id="nav-contracts">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>العقود والرواتب
+    </button>
+    <button class="nav-a" onclick="showPage('devices')" id="nav-devices">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>أجهزة الشبكة
+    </button>
+    <button class="nav-a" onclick="showPage('alerts')" id="nav-alerts">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>التنبيهات
+      <span id="alert-count-badge" style="background:#dc2626;color:#fff;font-size:10px;border-radius:10px;padding:1px 6px;margin-right:auto;display:none"></span>
+    </button>
+    <button class="nav-a" onclick="showPage('approvals')" id="nav-approvals" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>طلبات الموافقة
+      <span id="approvals-badge" style="background:#d97706;color:#fff;font-size:10px;border-radius:10px;padding:1px 6px;margin-right:auto;display:none"></span>
+    </button>
+    <button class="nav-a" onclick="showPage('client-portal')" id="nav-client-portal" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>بوابة العملاء
+    </button>
+    <div class="nav-sep"></div>
+    <a href="/portal" target="_blank" class="nav-a" style="color:#a78bfa;font-weight:600" id="nav-portal-link" title="بوابة العميل">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      🔐 بوابة العميل ↗
+    </a>
+    <a href="/matching" target="_blank" class="nav-a" style="color:#4ade80;font-weight:600">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3m8 0h3a2 2 0 0 0 2-2v-3"/></svg>
+      ⚖️ نظام المطابقة ↗
+    </a>
+    <a href="/zatca" target="_blank" class="nav-a" style="color:#fbbf24;font-weight:600">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      ⚡ فاحص XML — ZATCA
+    </a>
+  </div>
+</nav>
+
+<!-- ══ Main ══ -->
+<div class="main">
+<div class="topbar">
+  <div class="search-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="global-search" placeholder="بحث شامل — عملاء، مطابقات، زيارات..." oninput="globalSearch(this.value)">
+  </div>
+  <div class="topbar-right">
+    <span id="topbar-date" style="font-size:12px;color:var(--muted)"></span>
+    <button class="btn btn-sm" onclick="showPage('alerts')">🔔 <span id="tb-alert-n"></span></button>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- ══════════ DASHBOARD ══════════ -->
+<div class="page active" id="page-dashboard">
+  <div class="page-header"><h1 class="page-title">لوحة التحكم</h1><span id="dash-time" style="font-size:12px;color:var(--muted)"></span></div>
+  <div class="stats" id="dash-stats"></div>
+  <div class="two">
+    <div class="card">
+      <div class="card-header"><span class="card-title">👥 العملاء</span><button class="btn btn-sm btn-primary" onclick="showPage('clients')">عرض الكل</button></div>
+      <div id="dash-clients"></div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">⚖️ آخر المطابقات</span></div>
+        <div id="dash-sessions"></div>
+      </div>
+    </div>
+  </div>
+  <div class="two">
+    <div class="card">
+      <div class="card-header"><span class="card-title">📅 آخر الزيارات</span><button class="btn btn-sm" onclick="showPage('visits')">الكل</button></div>
+      <div id="dash-visits"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">🔔 التنبيهات</span></div>
+      <div id="dash-alerts-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ CLIENTS ══════════ -->
+<div class="page" id="page-clients">
+  <div class="page-header">
+    <h1 class="page-title">العملاء</h1>
+    <button class="btn btn-primary" onclick="openModal('modal-client')">+ إضافة عميل</button>
+  </div>
+  <div class="two" style="align-items:start">
+    <div class="card" style="max-height:calc(100vh - 160px);overflow-y:auto">
+      <div class="card-header"><span class="card-title">قائمة العملاء</span><input type="text" id="client-search" placeholder="بحث..." oninput="filterClients(this.value)" style="padding:5px 10px;font-size:12px;border:1px solid var(--border);border-radius:6px;width:140px"></div>
+      <div id="clients-list"></div>
+    </div>
+    <div id="client-detail-panel">
+      <div class="card"><div class="empty"><div class="empty-icon">👈</div><div class="empty-t">اختر عميلاً</div><div class="empty-s">اضغط على أي عميل لعرض تفاصيله</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ MATCHING ══════════ -->
+<div class="page" id="page-matching">
+  <div class="page-header"><h1 class="page-title">مطابقة الموازنات</h1></div>
+  <div class="two" style="align-items:start">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:14px">جلسة مطابقة جديدة</div>
+      <div class="fg"><label>العميل</label><select id="m-client" onchange="loadLastSession()"></select></div>
+      <div class="fg"><label>الفرع</label><select id="m-branch"><option value="">— بدون فرع —</option></select></div>
+
+      <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px">🕐 نقطة البداية (آخر موازنة)</div>
+        <div class="form-row">
+          <div class="fg" style="margin:0"><label>التاريخ</label><input type="date" id="m-prev-date"></div>
+          <div class="fg" style="margin:0"><label>الوقت</label><input type="time" id="m-prev-time" step="1"></div>
+        </div>
+        <div id="auto-fill-hint" style="font-size:11px;color:var(--accent);margin-top:6px;display:none">✓ تم تعبئة آخر موازنة مسجلة تلقائياً</div>
+      </div>
+
+      <div style="background:#f0f4ff;border:1px solid #c7d2fe;border-radius:10px;padding:12px;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px">📍 الموازنة الحالية</div>
+        <div class="form-row">
+          <div class="fg" style="margin:0"><label>التاريخ</label><input type="date" id="m-curr-date"></div>
+          <div class="fg" style="margin:0">
+            <label>الوقت <button type="button" onclick="setNow()" style="font-size:10px;padding:1px 6px;border:1px solid var(--border);border-radius:4px;cursor:pointer;background:#fff;margin-right:4px">الآن</button></label>
+            <input type="time" id="m-curr-time" step="1">
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px">
+          <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px">🌐 بيانات الشبكة</div>
+          <div class="fg" style="margin-bottom:8px"><label>عدد العمليات</label><input type="number" id="m-net-count" min="0" oninput="liveMatch()"></div>
+          <div class="fg" style="margin:0"><label>إجمالي المبلغ ر.س</label><input type="number" id="m-net-amount" min="0" step="0.01" oninput="liveMatch()"></div>
+        </div>
+        <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px">
+          <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px">💻 بيانات البرنامج</div>
+          <div class="fg" style="margin-bottom:8px"><label>عدد الفواتير</label><input type="number" id="m-prog-count" min="0" oninput="liveMatch()"></div>
+          <div class="fg" style="margin:0"><label>إجمالي المبلغ ر.س</label><input type="number" id="m-prog-amount" min="0" step="0.01" oninput="liveMatch()"></div>
+        </div>
+      </div>
+      <div class="fg"><label>ملاحظات</label><input type="text" id="m-notes" placeholder="اختياري..."></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="liveMatch()" style="flex:1">🔢 احسب</button>
+        <button class="btn btn-primary" onclick="saveSession()" style="flex:1">💾 حفظ الجلسة</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="match-box match-warn" id="match-result-box" style="display:none">
+        <div class="match-title" id="mr-title">—</div>
+        <div class="match-sub" id="mr-sub"></div>
+        <div class="match-grid">
+          <div class="match-cell"><div class="match-cell-l">فرق العمليات</div><div class="match-cell-v" id="mr-diff-count">—</div></div>
+          <div class="match-cell"><div class="match-cell-l">فرق المبلغ</div><div class="match-cell-v" id="mr-diff-amount">—</div></div>
+          <div class="match-cell"><div class="match-cell-l">نسبة التطابق</div><div class="match-cell-v" id="mr-pct">—</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">سجل الجلسات</span>
+          <select id="match-filter-client" onchange="loadMatchHistory()" style="font-size:12px;padding:5px 9px;border:1px solid var(--border);border-radius:6px"></select>
+        </div>
+        <div id="match-history"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ VISITS ══════════ -->
+<div class="page" id="page-visits">
+  <div class="page-header">
+    <h1 class="page-title">الزيارات</h1>
+    <button class="btn btn-primary" onclick="openVisitModal()">+ إضافة زيارة</button>
+  </div>
+  <div class="two" style="align-items:start">
+    <div class="card">
+      <div class="card-header"><span class="card-title">قائمة الزيارات</span>
+        <select id="visits-filter" onchange="loadVisits()" style="font-size:12px;padding:5px 9px;border:1px solid var(--border);border-radius:6px">
+          <option value="">الكل</option>
+        </select>
+      </div>
+      <div id="visits-list"></div>
+    </div>
+    <div id="visit-detail-panel">
+      <div class="card"><div class="empty"><div class="empty-icon">📋</div><div class="empty-t">اختر زيارة</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ CHECKLISTS ══════════ -->
+<div class="page" id="page-checklists">
+  <div class="page-header"><h1 class="page-title">قوائم المراجعة</h1></div>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+    <select id="chk-client" onchange="loadChecklist()" style="padding:7px 12px;font-size:13px;border:1px solid var(--border);border-radius:8px"></select>
+    <div class="tabs" style="margin:0;border:none">
+      <button class="tab active" onclick="switchChkTab('VAT',this)">VAT</button>
+      <button class="tab" onclick="switchChkTab('فاتورة إلكترونية',this)">فاتورة إلكترونية</button>
+      <button class="tab" onclick="switchChkTab('زكاة',this)">زكاة</button>
+    </div>
+    <span id="chk-pct" style="font-size:13px;font-weight:600;color:var(--accent)"></span>
+  </div>
+  <div class="two" style="align-items:start">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title" id="chk-tab-title">VAT</span>
+        <button class="btn btn-sm btn-primary" onclick="openAddChkItem()">+ بند</button>
+      </div>
+      <div id="chk-items"></div>
+      <div class="prog-bar"><div class="prog-fill" id="chk-fill" style="width:0%"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px">ملاحظات وتوصيات</div>
+      <textarea id="chk-notes" style="width:100%;height:300px;padding:10px;font-size:13px;border:1px solid var(--border);border-radius:8px;font-family:inherit" placeholder="أضف ملاحظاتك..."></textarea>
+      <button class="btn btn-primary" style="width:100%;margin-top:10px" onclick="toast('تم حفظ الملاحظات','s')">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ E-FATURA ══════════ -->
+<div class="page" id="page-efatura">
+  <div class="page-header"><h1 class="page-title">الفوترة الإلكترونية</h1></div>
+  <div class="tabs" style="margin-bottom:16px">
+    <button class="tab active" onclick="switchEfaturaTab('checklist',this)">Checklist الربط</button>
+    <button class="tab" onclick="switchEfaturaTab('xml',this)">فحص XML</button>
+  </div>
+
+  <div id="ef-checklist">
+    <div class="two" style="align-items:start">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">متطلبات الربط والتكامل مع ZATCA</span>
+          <span id="ef-pct" style="font-size:13px;font-weight:600;color:var(--accent)"></span>
+        </div>
+        <div id="ef-items"></div>
+        <div class="prog-bar"><div class="prog-fill" id="ef-fill" style="width:0%"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:10px">نسبة الامتثال</div>
+        <div style="text-align:center;padding:20px 0">
+          <div style="font-size:52px;font-weight:700;color:var(--accent)" id="ef-pct-big">—</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:4px">من متطلبات ZATCA</div>
+        </div>
+        <div id="ef-summary"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="ef-xml" style="display:none">
+    <div class="two" style="align-items:start">
+      <div class="card">
+        <div class="card-title" style="margin-bottom:12px">فحص ملف XML</div>
+        <div class="fg"><label>الصق محتوى ملف XML هنا</label>
+          <textarea id="xml-input" style="font-family:monospace;font-size:12px;direction:ltr;text-align:left;height:300px" placeholder='<?xml version="1.0" encoding="UTF-8"?>&#10;<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" ...>'></textarea>
+        </div>
+        <button class="btn btn-primary" style="width:100%" onclick="checkXML()">🔍 فحص XML</button>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:12px">نتائج الفحص</div>
+        <div id="xml-results"><div class="empty"><div class="empty-icon">📄</div><div class="empty-t">في انتظار الفحص</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ CONTRACTS ══════════ -->
+<div class="page" id="page-contracts">
+  <div class="page-header">
+    <h1 class="page-title">العقود والرواتب</h1>
+    <button class="btn btn-primary" onclick="openModal('modal-contract')">+ إضافة عقد</button>
+  </div>
+  <div class="stats" id="contracts-stats" style="grid-template-columns:repeat(3,1fr)"></div>
+  <div class="card">
+    <div class="tbl-wrap" id="contracts-table"></div>
+  </div>
+</div>
+
+<!-- ══════════ DEVICES ══════════ -->
+<div class="page" id="page-devices">
+  <div class="page-header">
+    <h1 class="page-title">أجهزة الشبكة</h1>
+    <button class="btn btn-primary" onclick="openModal('modal-device')">+ إضافة جهاز</button>
+  </div>
+  <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center">
+    <label style="font-size:13px;color:var(--muted)">العميل:</label>
+    <select id="dev-client-filter" onchange="loadDevices()" style="padding:7px 12px;font-size:13px;border:1px solid var(--border);border-radius:8px"></select>
+  </div>
+  <div class="card"><div class="tbl-wrap"><table><thead><tr><th>رقم الجهاز</th><th>الاسم</th><th>النوع</th><th>الفرع</th><th>الحساب البنكي</th><th>الموقع</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="devices-tbody"></tbody></table></div></div>
+</div>
+
+<!-- ══════════ ALERTS ══════════ -->
+<div class="page" id="page-alerts">
+  <div class="page-header"><h1 class="page-title">التنبيهات</h1><button class="btn" onclick="loadAlerts()">🔄 تحديث</button></div>
+  <div id="alerts-list"></div>
+</div>
+
+<!-- ═══ USERS (Admin only) ═══ -->
+<div class="page" id="page-users"></div>
+
+<!-- ═══ APPROVALS ═══ -->
+<div class="page" id="page-approvals">
+  <div class="page-header">
+    <h1 class="page-title">📬 طلبات الموافقة</h1>
+    <div style="display:flex;gap:8px">
+      <select id="ap-filter-status" onchange="loadApprovals()" style="padding:7px 12px;font-size:13px;border:1px solid var(--border);border-radius:8px">
+        <option value="">جميع الطلبات</option>
+        <option value="pending">معلقة ⏳</option>
+        <option value="approved">مقبولة ✅</option>
+        <option value="rejected">مرفوضة ❌</option>
+        <option value="request_edit">تحتاج تعديل ✏️</option>
+      </select>
+      <select id="ap-filter-client" onchange="loadApprovals()" style="padding:7px 12px;font-size:13px;border:1px solid var(--border);border-radius:8px">
+        <option value="">جميع العملاء</option>
+      </select>
+    </div>
+  </div>
+  <div class="card" id="approvals-content">
+    <div class="empty"><div class="empty-icon">📬</div><div class="empty-t">جاري التحميل...</div></div>
+  </div>
+</div>
+
+<!-- ═══ CLIENT PORTAL MANAGEMENT ═══ -->
+<div class="page" id="page-client-portal">
+  <div class="page-header">
+    <h1 class="page-title">🔐 إدارة بوابة العملاء</h1>
+    <button class="btn btn-primary" onclick="openModal('modal-client-user')">+ إضافة مستخدم عميل</button>
+  </div>
+  <div class="two" style="align-items:start">
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">اختر العميل</span>
+        <select id="cp-client-sel" onchange="loadClientUsers()" style="font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:8px">
+          <option value="">— اختر —</option>
+        </select>
+      </div>
+      <div id="client-users-list"></div>
+    </div>
+    <div id="perms-panel">
+      <div class="card"><div class="empty"><div class="empty-icon">👆</div><div class="empty-t">اختر عميلاً لعرض مستخدميه</div></div></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end content -->
+</div><!-- end main -->
+</div><!-- end app -->
+
+<!-- ══ MODALS ══ -->
+
+<!-- Client -->
+<div class="modal-ov" id="modal-client" onclick="if(event.target===this)closeModal('modal-client')">
+  <div class="modal"><div class="modal-hdr"><span class="modal-title">إضافة عميل جديد</span><button class="modal-x" onclick="closeModal('modal-client')">✕</button></div>
+    <div class="fg"><label>الاسم *</label><input type="text" id="c-name" placeholder="اسم الشركة أو المؤسسة"></div>
+    <div class="form-row">
+      <div class="fg"><label>القطاع</label><select id="c-sector"><option>تجارة</option><option>خدمات</option><option>صناعة</option><option>عقارات</option><option>مقاولات</option><option>أخرى</option></select></div>
+      <div class="fg"><label>رقم التسجيل الضريبي</label><input type="text" id="c-taxnum" placeholder="300XXXXXXXXX0003"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>نوع الضريبة</label><select id="c-taxtype"><option>VAT</option><option>ضريبة الدخل</option><option>زكاة</option><option>VAT + زكاة</option></select></div>
+      <div class="fg"><label>مستوى المخاطر</label><select id="c-risk"><option>منخفض</option><option selected>متوسط</option><option>عالي</option></select></div>
+    </div>
+    <div class="fg"><label>ملاحظات</label><textarea id="c-notes" rows="2"></textarea></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+      <button class="btn" onclick="closeModal('modal-client')">إلغاء</button>
+      <button class="btn btn-primary" id="c-submit-btn" onclick="saveClient()">✓ حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Branch -->
+<div class="modal-ov" id="modal-branch" onclick="if(event.target===this)closeModal('modal-branch')">
+  <div class="modal"><div class="modal-hdr"><span class="modal-title" id="branch-modal-title">إضافة فرع</span><button class="modal-x" onclick="closeModal('modal-branch')">✕</button></div>
+    <input type="hidden" id="br-id">
+    <input type="hidden" id="br-client-id">
+    <div class="fg"><label>اسم الفرع *</label><input type="text" id="br-name" placeholder="مثال: الفرع الرئيسي"></div>
+    <div class="fg"><label>العنوان</label><input type="text" id="br-address" placeholder="المدينة — الحي"></div>
+    <div class="form-row">
+      <div class="fg"><label>مدير الفرع</label><input type="text" id="br-manager"></div>
+      <div class="fg"><label>رقم الهاتف</label><input type="text" id="br-phone"></div>
+    </div>
+    <div class="fg"><label>الحالة</label><select id="br-status"><option>نشط</option><option>متوقف</option></select></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+      <button class="btn" onclick="closeModal('modal-branch')">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveBranch()">✓ حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Visit -->
+<div class="modal-ov" id="modal-visit" onclick="if(event.target===this)closeModal('modal-visit')">
+  <div class="modal modal-lg"><div class="modal-hdr"><span class="modal-title" id="visit-modal-title">إضافة زيارة</span><button class="modal-x" onclick="closeModal('modal-visit')">✕</button></div>
+    <input type="hidden" id="v-id">
+    <div class="form-row">
+      <div class="fg"><label>العميل</label><select id="v-client"></select></div>
+      <div class="fg"><label>نوع الزيارة</label><select id="v-type"><option>دورية</option><option>طارئة</option><option>متابعة</option><option>مجدولة</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>تاريخ الزيارة</label><input type="date" id="v-date"></div>
+      <div class="fg"><label>وقت الزيارة</label><input type="time" id="v-time"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>اسم الزائر</label><input type="text" id="v-visitor" placeholder="اسم المراجع"></div>
+      <div class="fg"><label>الحالة</label><select id="v-status"><option>مخططة</option><option>جارية</option><option>مكتملة</option><option>ملغاة</option></select></div>
+    </div>
+    <div class="fg"><label>ملخص الزيارة</label><textarea id="v-summary" rows="2" placeholder="وصف كامل لما تم خلال الزيارة..."></textarea></div>
+    <div class="form-row">
+      <div class="fg"><label>المشكلات المكتشفة</label><textarea id="v-issues" rows="2"></textarea></div>
+      <div class="fg"><label>التوصيات</label><textarea id="v-recs" rows="2"></textarea></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>الإجراءات المطلوبة</label><textarea id="v-actions" rows="2"></textarea></div>
+      <div class="fg"><label>موعد الزيارة القادمة</label><input type="date" id="v-next"></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+      <button class="btn" onclick="closeModal('modal-visit')">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveVisit()">✓ حفظ الزيارة</button>
+    </div>
+  </div>
+</div>
+
+<!-- Contract -->
+<div class="modal-ov" id="modal-contract" onclick="if(event.target===this)closeModal('modal-contract')">
+  <div class="modal"><div class="modal-hdr"><span class="modal-title">إضافة عقد / راتب</span><button class="modal-x" onclick="closeModal('modal-contract')">✕</button></div>
+    <div class="fg"><label>اسم المتعاقد *</label><input type="text" id="ct-name"></div>
+    <div class="fg"><label>وصف العقد</label><input type="text" id="ct-desc"></div>
+    <div class="form-row">
+      <div class="fg"><label>المبلغ المتفق عليه ر.س *</label><input type="number" id="ct-amount" min="0" step="0.01"></div>
+      <div class="fg"><label>تاريخ الاستحقاق</label><input type="date" id="ct-due"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>الحالة</label><select id="ct-status"><option>جارٍ</option><option>منتهي</option><option>موقوف</option></select></div>
+      <div class="fg"><label>ملاحظات</label><input type="text" id="ct-notes"></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+      <button class="btn" onclick="closeModal('modal-contract')">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveContract()">✓ حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Device -->
+<div class="modal-ov" id="modal-device" onclick="if(event.target===this)closeModal('modal-device')">
+  <div class="modal"><div class="modal-hdr"><span class="modal-title" id="dev-modal-title">إضافة جهاز</span><button class="modal-x" onclick="closeModal('modal-device')">✕</button></div>
+    <input type="hidden" id="dev-id">
+    <div class="form-row">
+      <div class="fg"><label>العميل</label><select id="dev-client" onchange="loadDevModalBranches()"></select></div>
+      <div class="fg"><label>الفرع</label><select id="dev-branch"><option value="">— بدون —</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>رقم الجهاز (UID)</label><input type="text" id="dev-uid" placeholder="DEV-001"></div>
+      <div class="fg"><label>اسم الجهاز *</label><input type="text" id="dev-name"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>النوع</label><select id="dev-type"><option>POS</option><option>NFC</option><option>Kiosk</option><option>Mobile</option><option>PC</option></select></div>
+      <div class="fg"><label>الحالة</label><select id="dev-status"><option>نشط</option><option>معطل</option><option>صيانة</option></select></div>
+    </div>
+    <div class="fg"><label>الموقع / العنوان</label><input type="text" id="dev-loc" placeholder="مثال: المدخل الرئيسي"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+      <button class="btn" onclick="closeModal('modal-device')">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveDevice()">✓ حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Checklist Item -->
+<div class="modal-ov" id="modal-chk-item" onclick="if(event.target===this)closeModal('modal-chk-item')">
+  <div class="modal" style="width:400px"><div class="modal-hdr"><span class="modal-title">إضافة بند جديد</span><button class="modal-x" onclick="closeModal('modal-chk-item')">✕</button></div>
+    <div class="fg"><label>نص البند *</label><input type="text" id="chk-new-item" placeholder="اكتب البند..."></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+      <button class="btn" onclick="closeModal('modal-chk-item')">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveChkItem()">✓ إضافة</button>
+    </div>
+  </div>
+</div>
+
+<!-- Payment -->
+<div class="modal-ov" id="modal-payment" onclick="if(event.target===this)closeModal('modal-payment')">
+  <div class="modal" style="width:400px"><div class="modal-hdr"><span class="modal-title">تسجيل دفعة</span><button class="modal-x" onclick="closeModal('modal-payment')">✕</button></div>
+    <input type="hidden" id="pay-contract-id">
+    <div class="fg"><label>المبلغ ر.س *</label><input type="number" id="pay-amount" min="0" step="0.01"></div>
+    <div class="fg"><label>تاريخ الدفع</label><input type="date" id="pay-date"></div>
+    <div class="fg"><label>ملاحظات</label><input type="text" id="pay-notes"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+      <button class="btn" onclick="closeModal('modal-payment')">إلغاء</button>
+      <button class="btn btn-success" onclick="savePayment()">✓ تسجيل الدفعة</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Add User ══ -->
+<div class="modal-ov" id="modal-user" onclick="if(event.target===this)closeModal('modal-user')">
+  <div class="modal" style="width:440px">
+    <div class="modal-hdr"><span class="modal-title">إضافة مستخدم جديد</span><button class="modal-x" onclick="closeModal('modal-user')">✕</button></div>
+    <div class="form-row">
+      <div class="fg"><label>اسم المستخدم *</label><input type="text" id="nu-username" placeholder="مثال: ahmed"></div>
+      <div class="fg"><label>الاسم الكامل *</label><input type="text" id="nu-name" placeholder="أحمد محمد"></div>
+    </div>
+    <div class="fg"><label>البريد الإلكتروني</label><input type="email" id="nu-email" placeholder="email@domain.com" style="direction:ltr;text-align:left"></div>
+    <div class="form-row">
+      <div class="fg"><label>كلمة المرور *</label><input type="password" id="nu-password" placeholder="8 أحرف على الأقل"></div>
+      <div class="fg"><label>الدور</label>
+        <select id="nu-role">
+          <option value="viewer">مشاهد فقط</option>
+          <option value="reviewer">مراجع</option>
+          <option value="admin">مدير النظام</option>
+        </select>
+      </div>
+    </div>
+    <div style="background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:10px;font-size:12px;color:#a16207;margin-bottom:12px">
+      <strong>الصلاحيات:</strong><br>
+      🟢 مشاهد: قراءة فقط — لا يمكنه الإضافة أو الحذف<br>
+      🔵 مراجع: قراءة + كتابة + حذف — لا يدير المستخدمين<br>
+      🔴 مدير: كل الصلاحيات
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="closeModal('modal-user')">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveNewUser()">✓ إضافة</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Edit User ══ -->
+<div class="modal-ov" id="modal-edit-user" onclick="if(event.target===this)closeModal('modal-edit-user')">
+  <div class="modal" style="width:400px">
+    <div class="modal-hdr"><span class="modal-title" id="user-modal-title">تعديل مستخدم</span><button class="modal-x" onclick="closeModal('modal-edit-user')">✕</button></div>
+    <input type="hidden" id="uu-id">
+    <div class="fg"><label>الاسم الكامل</label><input type="text" id="uu-name"></div>
+    <div class="fg"><label>البريد الإلكتروني</label><input type="email" id="uu-email" style="direction:ltr;text-align:left"></div>
+    <div class="form-row">
+      <div class="fg"><label>الدور</label>
+        <select id="uu-role">
+          <option value="viewer">مشاهد فقط</option>
+          <option value="reviewer">مراجع</option>
+          <option value="admin">مدير النظام</option>
+        </select>
+      </div>
+      <div class="fg"><label>الحالة</label>
+        <select id="uu-active"><option value="1">نشط</option><option value="0">موقوف</option></select>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="closeModal('modal-edit-user')">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveEditUser()">✓ حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Change Password ══ -->
+<div class="modal-ov" id="modal-change-pwd" onclick="if(event.target===this)closeModal('modal-change-pwd')">
+  <div class="modal" style="width:380px">
+    <div class="modal-hdr"><span class="modal-title">🔑 تغيير كلمة المرور</span><button class="modal-x" onclick="closeModal('modal-change-pwd')">✕</button></div>
+    <div class="fg"><label>كلمة المرور الحالية</label><input type="password" id="cp-old" placeholder="كلمة المرور الحالية"></div>
+    <div class="fg"><label>كلمة المرور الجديدة</label><input type="password" id="cp-new" placeholder="8 أحرف على الأقل"></div>
+    <div class="fg"><label>تأكيد كلمة المرور الجديدة</label><input type="password" id="cp-confirm" placeholder="أعد الكتابة"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="closeModal('modal-change-pwd')">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveChangePassword()">✓ تغيير</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Add Client User ══ -->
+<div class="modal-ov" id="modal-client-user" onclick="if(event.target===this)closeModal('modal-client-user')">
+  <div class="modal" style="width:520px">
+    <div class="modal-hdr"><span class="modal-title">🔐 إضافة مستخدم عميل</span><button class="modal-x" onclick="closeModal('modal-client-user')">✕</button></div>
+    <div class="fg"><label>العميل *</label><select id="cu-client"><option value="">— اختر العميل —</option></select></div>
+    <div class="form-row">
+      <div class="fg"><label>اسم المستخدم *</label><input type="text" id="cu-username" placeholder="مثال: client_nakheel"></div>
+      <div class="fg"><label>الاسم الكامل *</label><input type="text" id="cu-fullname" placeholder="اسم المسؤول في الشركة"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>البريد الإلكتروني</label><input type="email" id="cu-email" placeholder="email@company.com" style="direction:ltr;text-align:left"></div>
+      <div class="fg"><label>كلمة المرور *</label><input type="password" id="cu-password" placeholder="8 أحرف على الأقل"></div>
+    </div>
+    <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:12px">🔑 صلاحيات البوابة</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="cu-matching" checked style="width:15px;height:15px;accent-color:var(--accent)">عرض المطابقات</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="cu-submit" checked style="width:15px;height:15px;accent-color:var(--accent)">رفع الموازنات</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="cu-visits" style="width:15px;height:15px;accent-color:var(--accent)">عرض الزيارات</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="cu-checklists" style="width:15px;height:15px;accent-color:var(--accent)">قوائم المراجعة</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="cu-devices" style="width:15px;height:15px;accent-color:var(--accent)">الأجهزة</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="cu-banks" style="width:15px;height:15px;accent-color:var(--accent)">الحسابات البنكية</label>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="closeModal('modal-client-user')">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveClientUser()">✓ إنشاء الحساب</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Review Approval ══ -->
+<div class="modal-ov" id="modal-review" onclick="if(event.target===this)closeModal('modal-review')">
+  <div class="modal" style="width:620px">
+    <div class="modal-hdr"><span class="modal-title" id="review-modal-title">مراجعة الموازنة</span><button class="modal-x" onclick="closeModal('modal-review')">✕</button></div>
+    <input type="hidden" id="review-approval-id">
+    <!-- Session details -->
+    <div id="review-session-details" style="margin-bottom:14px"></div>
+    <!-- Optional edits -->
+    <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:10px">✏️ تعديل القيم (اختياري — اتركها فارغة إذا لم تريد التعديل)</div>
+      <div class="form-row">
+        <div class="fg" style="margin:0"><label>عدد عمليات الشبكة</label><input type="number" id="rv-net-count" min="0" placeholder="اتركه فارغاً للإبقاء"></div>
+        <div class="fg" style="margin:0"><label>مبلغ الشبكة ر.س</label><input type="number" id="rv-net-amount" min="0" step="0.01" placeholder="اتركه فارغاً للإبقاء"></div>
+      </div>
+      <div class="form-row" style="margin-top:8px">
+        <div class="fg" style="margin:0"><label>عدد فواتير البرنامج</label><input type="number" id="rv-prog-count" min="0" placeholder="اتركه فارغاً للإبقاء"></div>
+        <div class="fg" style="margin:0"><label>مبلغ البرنامج ر.س</label><input type="number" id="rv-prog-amount" min="0" step="0.01" placeholder="اتركه فارغاً للإبقاء"></div>
+      </div>
+    </div>
+    <div class="fg"><label>ملاحظة المدير (تصل للعميل)</label><textarea id="rv-notes" rows="2" placeholder="اكتب ملاحظتك..."></textarea></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+      <button class="btn" onclick="closeModal('modal-review')">إلغاء</button>
+      <button class="btn" style="background:#fee2e2;color:#b91c1c;border-color:#fecaca" onclick="doReview('reject')">❌ رفض</button>
+      <button class="btn" style="background:#dbeafe;color:#1d4ed8;border-color:#93c3fd" onclick="doReview('request_edit')">✏️ طلب تعديل</button>
+      <button class="btn btn-primary" onclick="doReview('approve')">✅ موافقة</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══ State ═════════════════════════════════════════════════════════════════════
+let allClients = [];
+let currentClient = null;
+let chkCategory = 'VAT';
+let efaturaItems = [];
+
+// ══ Helpers ═══════════════════════════════════════════════════════════════════
+// NOTE: These are replaced by authenticated versions in Auth Guard section below
+var get  = url => fetch(url).then(r => r.json());
+var post = (url,d) => fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(r=>r.json());
+var put  = (url,d) => fetch(url,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(r=>r.json());
+var del  = url => fetch(url,{method:'DELETE'}).then(r=>r.json());
+
+function fmt(n,dec=2){return Number(n||0).toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec});}
+function fmtN(n){return Number(n||0).toLocaleString('en-US');}
+function today(){return new Date().toISOString().slice(0,10);}
+function nowTime(){const n=new Date();return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;}
+
+function sBadge(s){const m={'مكتملة':'b-g','متأخرة':'b-r','قيد المراجعة':'b-y','نشط':'b-g','معطل':'b-r','صيانة':'b-y','مخططة':'b-b','جارية':'b-y','مكتملة':'b-g','ملغاة':'b-r','متطابقة':'b-g','يوجد فرق':'b-r','تحتاج مراجعة':'b-y','جارٍ':'b-b','منتهي':'b-g','موقوف':'b-r'};return `<span class="badge ${m[s]||'b-gray'}">${s}</span>`;}
+function rBadge(r){const m={منخفض:'b-g',متوسط:'b-y',عالي:'b-r'};return `<span class="badge ${m[r]||'b-gray'}">${r}</span>`;}
+
+function toast(msg,type='s'){const t=document.getElementById('toast');t.textContent=(type==='s'?'✅ ':type==='e'?'❌ ':'ℹ️ ')+msg;t.style.background=type==='s'?'#15803d':type==='e'?'#b91c1c':'#1d4ed8';t.style.display='block';setTimeout(()=>t.style.display='none',3000);}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+// ══ Navigation ════════════════════════════════════════════════════════════════
+const loaders = {dashboard:loadDashboard,clients:loadClientsPage,matching:loadMatchingPage,visits:loadVisits,checklists:loadChecklistPage,efatura:loadEfatura,contracts:loadContracts,devices:loadDevicesPage,alerts:loadAlerts};
+
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-a').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.getElementById('nav-'+name)?.classList.add('active');
+  loaders[name]?.();
+}
+
+// ══ Topbar ════════════════════════════════════════════════════════════════════
+function initTopbar(){
+  const el=document.getElementById('topbar-date');
+  const now=new Date();
+  el.textContent=now.toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  loadAlertCount();
+}
+async function loadAlertCount(){
+  const alerts=await get('/api/alerts');
+  const n=alerts.filter(a=>!a.is_read).length;
+  document.getElementById('alert-count-badge').textContent=n;
+  document.getElementById('alert-count-badge').style.display=n?'inline-flex':'none';
+  document.getElementById('tb-alert-n').textContent=n?`${n} تنبيه`:'تنبيهات';
+}
+
+// ══ Global Search ═════════════════════════════════════════════════════════════
+let searchTimeout;
+function globalSearch(q){
+  clearTimeout(searchTimeout);
+  if(!q.trim()){loadDashboard();return;}
+  searchTimeout=setTimeout(async()=>{
+    const data=await get(`/api/dashboard?q=${encodeURIComponent(q)}`);
+    renderDashboard(data);
+  },300);
+}
+
+// ══ Dashboard ════════════════════════════════════════════════════════════════
+async function loadDashboard(){
+  const data=await get('/api/dashboard');
+  renderDashboard(data);
+}
+function renderDashboard(data){
+  document.getElementById('dash-stats').innerHTML=
+    `<div class="stat"><div class="stat-icon ic-blue">👥</div><div class="stat-info"><div class="stat-v">${data.stats.total}</div><div class="stat-l">إجمالي العملاء</div></div></div>
+     <div class="stat"><div class="stat-icon ic-green">✅</div><div class="stat-info"><div class="stat-v" style="color:var(--success)">${data.stats.done}</div><div class="stat-l">مكتملة</div></div></div>
+     <div class="stat"><div class="stat-icon ic-yellow">⏳</div><div class="stat-info"><div class="stat-v" style="color:var(--warning)">${data.stats.in_progress}</div><div class="stat-l">قيد المراجعة</div></div></div>
+     <div class="stat"><div class="stat-icon ic-red">🚨</div><div class="stat-info"><div class="stat-v" style="color:var(--danger)">${data.stats.late}</div><div class="stat-l">متأخرة</div></div></div>`;
+
+  document.getElementById('dash-clients').innerHTML=data.clients.slice(0,6).map(c=>
+    `<div class="client-item" onclick="showPage('clients');setTimeout(()=>openClientDetail(${c.id}),100)">
+       <div class="client-avatar" style="background:${hashColor(c.name)}">${c.name[0]}</div>
+       <div><div class="client-name">${c.name}</div><div class="client-sub">${c.sector||''} · ${c.tax_type||''}</div></div>
+       <div style="margin-right:auto">${sBadge(c.status)}</div>
+     </div>`).join('');
+
+  document.getElementById('dash-sessions').innerHTML=data.sessions.length?data.sessions.slice(0,5).map(s=>
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:12px">
+       <div><div style="font-weight:500">${s.client_name}</div><div style="color:var(--muted)">${s.curr_date} ${s.curr_time}</div></div>
+       ${sBadge(s.match_status)}
+     </div>`).join(''):'<div class="empty" style="padding:20px"><div class="empty-t">لا توجد جلسات</div></div>';
+
+  document.getElementById('dash-visits').innerHTML=data.visits.slice(0,4).map(v=>
+    `<div class="tl-item">
+       <div class="tl-dot ${v.status==='مكتملة'?'tl-dot-g':v.status==='مخططة'?'tl-dot-b':'tl-dot-y'}"></div>
+       <div class="tl-date">${v.visit_date} ${v.visit_time} — ${v.visitor_name||''}</div>
+       <div class="tl-title">${v.client_name} · ${sBadge(v.visit_type)} ${sBadge(v.status)}</div>
+       ${v.summary?`<div class="tl-sub">${v.summary.slice(0,60)}...</div>`:''}
+     </div>`).join('');
+
+  document.getElementById('dash-alerts-list').innerHTML=data.alerts.slice(0,5).map(a=>
+    `<div class="alert-strip as-${a.level==='danger'?'d':a.level==='warning'?'w':a.level==='success'?'s':'i'}" style="font-size:12px;margin-bottom:6px">
+       ${a.level==='danger'?'🔴':a.level==='warning'?'🟡':a.level==='success'?'🟢':'🔵'} ${a.message}
+     </div>`).join('');
+}
+
+// ══ Clients ═══════════════════════════════════════════════════════════════════
+async function loadClientsPage(){
+  allClients=await get('/api/clients');
+  renderClientList(allClients);
+  // populate selects everywhere
+  populateClientSelects();
+}
+function renderClientList(clients){
+  document.getElementById('clients-list').innerHTML=clients.length?clients.map(c=>
+    `<div class="client-item ${currentClient?.id===c.id?'selected':''}" onclick="openClientDetail(${c.id})" id="cli-${c.id}">
+       <div class="client-avatar" style="background:${hashColor(c.name)}">${c.name[0]}</div>
+       <div style="flex:1"><div class="client-name">${c.name}</div><div class="client-sub">${c.sector||''} · ${c.tax_number||''}</div></div>
+       <div>${sBadge(c.status)}</div>
+     </div>`).join(''):'<div class="empty"><div class="empty-t">لا يوجد عملاء</div></div>';
+}
+function filterClients(q){
+  renderClientList(allClients.filter(c=>c.name.includes(q)||c.tax_number?.includes(q)||c.sector?.includes(q)));
+}
+function hashColor(str){const colors=['#4f8ef7','#16a34a','#d97706','#7c3aed','#0891b2','#be185d'];let h=0;for(let c of str)h=((h<<5)-h)+c.charCodeAt(0);return colors[Math.abs(h)%colors.length];}
+
+async function openClientDetail(id){
+  currentClient={id};
+  document.querySelectorAll('.client-item').forEach(el=>el.classList.remove('selected'));
+  document.getElementById(`cli-${id}`)?.classList.add('selected');
+  const data = await get(`/api/clients/${id}`);
+  if (!data || !data.client) { toast('خطأ في تحميل بيانات العميل','e'); return; }
+  currentClient = data.client;
+  const panel = document.getElementById('client-detail-panel');
+
+  const canWrite  = checkPermission('write');
+  const canDelete = checkPermission('delete');
+
+  panel.innerHTML=`
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div style="font-size:16px;font-weight:700;color:var(--primary)">${data.client.name}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${data.client.sector||''} · ${data.client.tax_number||''} · ${data.client.tax_type||''}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          ${rBadge(data.client.risk)} ${sBadge(data.client.status)}
+          ${canWrite  ? `<button class="btn btn-sm" onclick="openEditClientModal(${id})" title="تعديل العميل">✏️</button>` : ''}
+          ${canDelete ? `<button class="btn btn-danger btn-sm" onclick="deleteClient(${id})">🗑 حذف</button>` : ''}
+        </div>
+      </div>
+      ${data.client.notes ? `<div style="font-size:12px;color:var(--muted);background:#f8fafc;padding:8px 12px;border-radius:8px;margin-bottom:12px">${data.client.notes}</div>` : ''}
+      <div class="tabs" id="client-tabs">
+        <button class="tab active" onclick="switchClientTab('branches',this,${id})">🏢 الفروع (${data.branches.length})</button>
+        <button class="tab" onclick="switchClientTab('sessions',this,${id})">⚖️ المطابقات (${data.sessions.length})</button>
+        <button class="tab" onclick="switchClientTab('visits',this,${id})">📅 الزيارات (${data.visits.length})</button>
+        <button class="tab" onclick="switchClientTab('banks',this,${id})">🏦 البنوك (${data.banks.length})</button>
+        <button class="tab" onclick="switchClientTab('devices',this,${id})">📟 الأجهزة (${data.devices.length})</button>
+      </div>
+      <div id="client-tab-content" style="margin-top:12px"></div>
+    </div>`;
+  renderClientTab('branches', data, id);
+}
+
+function switchClientTab(tab,el,id){
+  document.querySelectorAll('#client-tabs .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  get(`/api/clients/${id}`).then(data => renderClientTab(tab, data, id));
+}
+
+function renderClientTab(tab, data, clientId){
+  const el = document.getElementById('client-tab-content');
+  if (!el) return;
+  const canWrite  = checkPermission('write');
+  const canDelete = checkPermission('delete');
+
+  if (tab === 'branches') {
+    el.innerHTML = `
+      ${canWrite ? `<div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+        <button class="btn btn-sm btn-primary" onclick="openBranchModal(${clientId})">+ إضافة فرع</button>
+      </div>` : ''}
+      ${data.branches.length ? `<div class="tbl-wrap"><table>
+        <thead><tr><th>اسم الفرع</th><th>العنوان</th><th>المدير</th><th>الهاتف</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+        <tbody>${data.branches.map(b=>`<tr>
+          <td><strong>${b.name}</strong></td>
+          <td>${b.address||'—'}</td>
+          <td>${b.manager||'—'}</td>
+          <td style="direction:ltr;text-align:right;font-size:12px">${b.phone||'—'}</td>
+          <td>${sBadge(b.status)}</td>
+          <td style="display:flex;gap:4px">
+            ${canWrite  ? `<button class="btn btn-sm btn-icon" onclick="openBranchModal(${clientId},${JSON.stringify(b).replace(/"/g,'&quot;')})" title="تعديل">✏️</button>` : ''}
+            ${canDelete ? `<button class="btn btn-danger btn-sm btn-icon" onclick="deleteBranch(${b.id},${clientId})" title="حذف">🗑</button>` : ''}
+          </td>
+        </tr>`).join('')}</tbody>
+      </table></div>` : '<div class="empty" style="padding:20px"><div class="empty-icon">🏢</div><div class="empty-t">لا توجد فروع</div></div>'}`;
+
+  } else if (tab === 'sessions') {
+    el.innerHTML = data.sessions.length ? `<div class="tbl-wrap"><table>
+      <thead><tr><th>من</th><th>إلى</th><th>شبكة (عمليات/مبلغ)</th><th>برنامج (فواتير/مبلغ)</th><th>فرق المبلغ</th><th>الحالة</th></tr></thead>
+      <tbody>${data.sessions.map(s=>`<tr>
+        <td style="font-size:11px">${s.prev_date}<br><span style="color:var(--muted)">${s.prev_time}</span></td>
+        <td style="font-size:11px">${s.curr_date}<br><span style="color:var(--muted)">${s.curr_time}</span></td>
+        <td style="text-align:center">${fmtN(s.net_tx_count)} / ${fmt(s.net_tx_amount)} ر.س</td>
+        <td style="text-align:center">${fmtN(s.prog_inv_count)} / ${fmt(s.prog_inv_amount)} ر.س</td>
+        <td style="color:${s.diff_amount!=0?'var(--danger)':'var(--success)'};font-weight:600;text-align:center">${s.diff_amount>=0?'+':''}${fmt(s.diff_amount)}</td>
+        <td>${sBadge(s.match_status)}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>` : '<div class="empty" style="padding:20px"><div class="empty-icon">⚖️</div><div class="empty-t">لا توجد جلسات مطابقة</div><button class="btn btn-primary" onclick="showPage(\'matching\')" style="margin-top:10px">إضافة موازنة</button></div>';
+
+  } else if (tab === 'visits') {
+    el.innerHTML = `
+      ${canWrite ? `<div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+        <button class="btn btn-sm btn-primary" onclick="openVisitForClient(${clientId})">+ إضافة زيارة</button>
+      </div>` : ''}
+      ${data.visits.length ? data.visits.map(v=>`
+        <div style="padding:10px 0;border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="showVisitDetail(${JSON.stringify(v).replace(/"/g,'&quot;')})">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div><span style="font-weight:600">${v.visit_date} ${v.visit_time}</span> · <span style="color:var(--muted)">${v.visitor_name||''}</span></div>
+            <div style="display:flex;gap:6px">${sBadge(v.visit_type)} ${sBadge(v.status)}</div>
+          </div>
+          ${v.summary ? `<div style="font-size:12px;color:var(--muted);margin-top:3px">${v.summary.slice(0,100)}${v.summary.length>100?'...':''}</div>` : ''}
+        </div>`).join('') : '<div class="empty" style="padding:20px"><div class="empty-icon">📅</div><div class="empty-t">لا توجد زيارات</div></div>'}`;
+
+  } else if (tab === 'banks') {
+    el.innerHTML = `
+      ${canWrite ? `<div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+        <button class="btn btn-sm btn-primary" onclick="openBankModal(${clientId}, ${JSON.stringify(data.branches).replace(/"/g,'&quot;')})">+ إضافة حساب</button>
+      </div>` : ''}
+      ${data.banks.length ? `<div class="tbl-wrap"><table>
+        <thead><tr><th>البنك</th><th>IBAN</th><th>الرصيد</th><th>الفرع</th><th>الحالة</th>${canDelete?'<th>حذف</th>':''}</tr></thead>
+        <tbody>${data.banks.map(b=>`<tr>
+          <td><strong>${b.bank_name}</strong></td>
+          <td style="direction:ltr;text-align:left;font-size:11px;color:var(--muted)">${b.iban||'—'}</td>
+          <td style="font-weight:600">${fmt(b.balance)} ر.س</td>
+          <td>${b.branch_id ? (data.branches.find(br=>br.id===b.branch_id)?.name||'—') : '—'}</td>
+          <td>${sBadge(b.status)}</td>
+          ${canDelete ? `<td><button class="btn btn-danger btn-sm btn-icon" onclick="deleteBank(${b.id},${clientId})">🗑</button></td>` : ''}
+        </tr>`).join('')}</tbody>
+      </table></div>` : '<div class="empty" style="padding:20px"><div class="empty-icon">🏦</div><div class="empty-t">لا توجد حسابات بنكية</div></div>'}`;
+
+  } else if (tab === 'devices') {
+    el.innerHTML = `
+      ${canWrite ? `<div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+        <button class="btn btn-sm btn-primary" onclick="openDeviceModalForClient(${clientId}, ${JSON.stringify(data.branches).replace(/"/g,'&quot;')}, ${JSON.stringify(data.banks).replace(/"/g,'&quot;')})">+ إضافة جهاز</button>
+      </div>` : ''}
+      ${data.devices.length ? `<div class="tbl-wrap"><table>
+        <thead><tr><th>UID</th><th>الاسم</th><th>النوع</th><th>الفرع</th><th>الحساب البنكي</th><th>الموقع</th><th>الحالة</th>${canDelete?'<th>حذف</th>':''}</tr></thead>
+        <tbody>${data.devices.map(d=>`<tr>
+          <td style="font-size:11px;font-family:monospace;color:var(--muted)">${d.device_uid||'—'}</td>
+          <td><strong>${d.name}</strong></td>
+          <td><span class="badge b-b">${d.type}</span></td>
+          <td>${d.branch_name||'—'}</td>
+          <td>${d.bank_name||'—'}</td>
+          <td>${d.location||'—'}</td>
+          <td>${sBadge(d.status)}</td>
+          ${canDelete ? `<td><button class="btn btn-danger btn-sm btn-icon" onclick="deleteDevice(${d.id},${clientId})">🗑</button></td>` : ''}
+        </tr>`).join('')}</tbody>
+      </table></div>` : '<div class="empty" style="padding:20px"><div class="empty-icon">📟</div><div class="empty-t">لا توجد أجهزة</div></div>'}`;
+  }
+}
+
+// Edit client
+async function openEditClientModal(id) {
+  const data = await get(`/api/clients/${id}`);
+  const c = data.client;
+  document.getElementById('c-name').value    = c.name || '';
+  document.getElementById('c-sector').value  = c.sector || 'تجارة';
+  document.getElementById('c-taxnum').value  = c.tax_number || '';
+  document.getElementById('c-taxtype').value = c.tax_type || 'VAT';
+  document.getElementById('c-risk').value    = c.risk || 'متوسط';
+  document.getElementById('c-notes').value   = c.notes || '';
+  // Switch modal to edit mode
+  document.querySelector('#modal-client .modal-title').textContent = 'تعديل بيانات العميل';
+  document.getElementById('c-submit-btn').textContent = '✓ حفظ التعديلات';
+  document.getElementById('c-submit-btn').onclick = () => updateClient(id);
+  openModal('modal-client');
+}
+
+async function updateClient(id) {
+  const name = document.getElementById('c-name').value.trim();
+  if (!name) { toast('الاسم مطلوب','e'); return; }
+  const r = await put(`/api/clients/${id}`, {
+    name, sector: document.getElementById('c-sector').value,
+    tax_number: document.getElementById('c-taxnum').value,
+    tax_type: document.getElementById('c-taxtype').value,
+    risk: document.getElementById('c-risk').value,
+    notes: document.getElementById('c-notes').value,
+    status: currentClient?.status || 'قيد المراجعة'
+  });
+  closeModal('modal-client');
+  // Reset modal to add mode
+  document.querySelector('#modal-client .modal-title').textContent = 'إضافة عميل جديد';
+  document.getElementById('c-submit-btn').textContent = '✓ حفظ';
+  document.getElementById('c-submit-btn').onclick = saveClient;
+  toast('تم تحديث بيانات العميل');
+  await loadClientsPage();
+  openClientDetail(id);
+}
+
+async function saveClient(){
+  const name = document.getElementById('c-name').value.trim();
+  if (!name) { toast('الاسم مطلوب','e'); return; }
+  await post('/api/clients',{
+    name, sector: document.getElementById('c-sector').value,
+    tax_number: document.getElementById('c-taxnum').value,
+    tax_type: document.getElementById('c-taxtype').value,
+    risk: document.getElementById('c-risk').value,
+    notes: document.getElementById('c-notes').value
+  });
+  closeModal('modal-client');
+  document.getElementById('c-name').value='';
+  document.getElementById('c-taxnum').value='';
+  document.getElementById('c-notes').value='';
+  toast('تم إضافة العميل');
+  await loadClientsPage();
+}
+async function deleteClient(id){
+  if(!confirm('حذف العميل وجميع بياناته نهائياً؟'))return;
+  await del('/api/clients/'+id);
+  toast('تم حذف العميل');
+  document.getElementById('client-detail-panel').innerHTML='<div class="card"><div class="empty"><div class="empty-icon">👈</div><div class="empty-t">اختر عميلاً</div></div></div>';
+  await loadClientsPage();
+}
+
+// ── Branches ─────────────────────────────────────────────────────────────────
+function openBranchModal(clientId, br=null){
+  const brObj = typeof br === 'string' ? JSON.parse(br.replace(/&quot;/g,'"')) : br;
+  document.getElementById('br-id').value = brObj?.id || '';
+  document.getElementById('br-client-id').value = clientId;
+  document.getElementById('branch-modal-title').textContent = brObj ? 'تعديل الفرع' : 'إضافة فرع جديد';
+  document.getElementById('br-name').value    = brObj?.name    || '';
+  document.getElementById('br-address').value = brObj?.address || '';
+  document.getElementById('br-manager').value = brObj?.manager || '';
+  document.getElementById('br-phone').value   = brObj?.phone   || '';
+  document.getElementById('br-status').value  = brObj?.status  || 'نشط';
+  openModal('modal-branch');
+}
+async function saveBranch(){
+  const clientId = parseInt(document.getElementById('br-client-id').value);
+  const id       = document.getElementById('br-id').value;
+  const name     = document.getElementById('br-name').value.trim();
+  if(!name){ toast('اسم الفرع مطلوب','e'); return; }
+  const data = {
+    client_id: clientId,
+    name,
+    address: document.getElementById('br-address').value,
+    manager: document.getElementById('br-manager').value,
+    phone:   document.getElementById('br-phone').value,
+    status:  document.getElementById('br-status').value
+  };
+  const r = id ? await put('/api/branches/'+id, data) : await post('/api/branches', data);
+  if (r.detail) { toast(r.detail,'e'); return; }
+  closeModal('modal-branch');
+  toast(id ? 'تم تحديث الفرع' : 'تم إضافة الفرع');
+  openClientDetail(clientId);
+}
+async function deleteBranch(id, clientId){
+  if(!confirm('حذف هذا الفرع؟ ستُحذف أجهزته أيضاً.'))return;
+  await del('/api/branches/'+id);
+  toast('تم حذف الفرع');
+  openClientDetail(clientId);
+}
+
+// ── Banks ─────────────────────────────────────────────────────────────────────
+function openBankModal(clientId, branches=[]) {
+  const brArr = typeof branches === 'string' ? JSON.parse(branches.replace(/&quot;/g,'"')) : branches;
+  // Build modal dynamically
+  const existing = document.getElementById('modal-bank-dynamic');
+  if (existing) existing.remove();
+  const mo = document.createElement('div');
+  mo.className = 'modal-ov';
+  mo.id = 'modal-bank-dynamic';
+  mo.innerHTML = `
+    <div class="modal" style="width:440px">
+      <div class="modal-hdr"><span class="modal-title">إضافة حساب بنكي</span><button class="modal-x" onclick="closeModal('modal-bank-dynamic')">✕</button></div>
+      <div class="fg"><label>اسم البنك *</label><input type="text" id="bk-name" placeholder="مثال: بنك الراجحي"></div>
+      <div class="fg"><label>رقم IBAN</label><input type="text" id="bk-iban" placeholder="SA00 0000 0000..." style="direction:ltr;text-align:left"></div>
+      <div class="form-row">
+        <div class="fg"><label>الرصيد الحالي ر.س</label><input type="number" id="bk-balance" value="0" min="0" step="0.01"></div>
+        <div class="fg"><label>الفرع المرتبط</label>
+          <select id="bk-branch"><option value="">— بدون —</option>
+            ${brArr.map(b=>`<option value="${b.id}">${b.name}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+        <button class="btn" onclick="closeModal('modal-bank-dynamic')">إلغاء</button>
+        <button class="btn btn-primary" onclick="saveBankAccount(${clientId})">✓ حفظ</button>
+      </div>
+    </div>`;
+  mo.onclick = (e) => { if(e.target===mo) closeModal('modal-bank-dynamic'); };
+  document.body.appendChild(mo);
+  mo.classList.add('open');
+}
+
+async function saveBankAccount(clientId) {
+  const name = document.getElementById('bk-name').value.trim();
+  if (!name) { toast('اسم البنك مطلوب','e'); return; }
+  const r = await post('/api/banks', {
+    client_id: clientId,
+    bank_name: name,
+    iban:     document.getElementById('bk-iban').value,
+    balance:  parseFloat(document.getElementById('bk-balance').value)||0,
+    branch_id: document.getElementById('bk-branch').value || null
+  });
+  if (r.detail) { toast(r.detail,'e'); return; }
+  closeModal('modal-bank-dynamic');
+  toast('تم إضافة الحساب البنكي');
+  openClientDetail(clientId);
+}
+
+async function deleteBank(id, clientId){
+  if(!confirm('حذف هذا الحساب البنكي؟'))return;
+  await del('/api/banks/'+id);
+  toast('تم الحذف');
+  openClientDetail(clientId);
+}
+
+// ── Devices (from client detail) ──────────────────────────────────────────────
+function openDeviceModalForClient(clientId, branches=[], banks=[]) {
+  const brArr = typeof branches === 'string' ? JSON.parse(branches.replace(/&quot;/g,'"')) : branches;
+  const bkArr = typeof banks    === 'string' ? JSON.parse(banks.replace(/&quot;/g,'"'))    : banks;
+  const existing = document.getElementById('modal-dev-dynamic');
+  if (existing) existing.remove();
+  const mo = document.createElement('div');
+  mo.className = 'modal-ov';
+  mo.id = 'modal-dev-dynamic';
+  mo.innerHTML = `
+    <div class="modal" style="width:460px">
+      <div class="modal-hdr"><span class="modal-title">إضافة جهاز جديد</span><button class="modal-x" onclick="closeModal('modal-dev-dynamic')">✕</button></div>
+      <div class="form-row">
+        <div class="fg"><label>رقم الجهاز (UID)</label><input type="text" id="dv-uid" placeholder="DEV-001"></div>
+        <div class="fg"><label>اسم الجهاز *</label><input type="text" id="dv-name" placeholder="كاشير رقم 1"></div>
+      </div>
+      <div class="form-row">
+        <div class="fg"><label>النوع</label>
+          <select id="dv-type"><option>POS</option><option>NFC</option><option>Kiosk</option><option>Mobile</option><option>PC</option></select>
+        </div>
+        <div class="fg"><label>الحالة</label>
+          <select id="dv-status"><option>نشط</option><option>معطل</option><option>صيانة</option></select>
+        </div>
+      </div>
+      <div class="fg"><label>الفرع</label>
+        <select id="dv-branch"><option value="">— بدون فرع —</option>
+          ${brArr.map(b=>`<option value="${b.id}">${b.name}</option>`).join('')}
+        </select>
+      </div>
+      <div class="fg"><label>الحساب البنكي المرتبط</label>
+        <select id="dv-bank"><option value="">— بدون —</option>
+          ${bkArr.map(b=>`<option value="${b.id}">${b.bank_name}</option>`).join('')}
+        </select>
+      </div>
+      <div class="fg"><label>الموقع / العنوان</label><input type="text" id="dv-location" placeholder="مثال: المدخل الرئيسي"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+        <button class="btn" onclick="closeModal('modal-dev-dynamic')">إلغاء</button>
+        <button class="btn btn-primary" onclick="saveDeviceForClient(${clientId})">✓ حفظ الجهاز</button>
+      </div>
+    </div>`;
+  mo.onclick = (e) => { if(e.target===mo) closeModal('modal-dev-dynamic'); };
+  document.body.appendChild(mo);
+  mo.classList.add('open');
+}
+
+async function saveDeviceForClient(clientId) {
+  const name = document.getElementById('dv-name').value.trim();
+  if (!name) { toast('اسم الجهاز مطلوب','e'); return; }
+  const r = await post('/api/devices', {
+    client_id:      clientId,
+    device_uid:     document.getElementById('dv-uid').value,
+    name,
+    type:           document.getElementById('dv-type').value,
+    status:         document.getElementById('dv-status').value,
+    branch_id:      document.getElementById('dv-branch').value || null,
+    bank_account_id:document.getElementById('dv-bank').value   || null,
+    location:       document.getElementById('dv-location').value
+  });
+  if (r.detail) { toast(r.detail,'e'); return; }
+  closeModal('modal-dev-dynamic');
+  toast('تم إضافة الجهاز');
+  openClientDetail(clientId);
+}
+
+async function deleteDevice(id, clientId){
+  if(!confirm('حذف هذا الجهاز؟'))return;
+  await del('/api/devices/'+id);
+  toast('تم حذف الجهاز');
+  openClientDetail(clientId);
+}
+
+function openVisitForClient(clientId) {
+  document.getElementById('v-id').value = '';
+  document.getElementById('v-client').value = clientId;
+  document.getElementById('v-date').value = today();
+  document.getElementById('v-time').value = nowT().slice(0,5);
+  openModal('modal-visit');
+}
+
+// ══ Matching ══════════════════════════════════════════════════════════════════
+async function loadMatchingPage(){
+  const clients=await get('/api/clients');
+  const sel=document.getElementById('m-client');
+  sel.innerHTML=clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  const fil=document.getElementById('match-filter-client');
+  fil.innerHTML='<option value="">الكل</option>'+clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  setCurrNow();await loadLastSession();await loadMatchHistory();
+}
+function setCurrNow(){
+  document.getElementById('m-curr-date').value=today();
+  document.getElementById('m-curr-time').value=nowTime();
+}
+function setNow(){document.getElementById('m-curr-time').value=nowTime();document.getElementById('m-curr-date').value=today();}
+
+async function loadLastSession(){
+  const clientId=document.getElementById('m-client').value;
+  if(!clientId)return;
+  // load branches
+  const branches=await get('/api/branches/'+clientId);
+  const bsel=document.getElementById('m-branch');
+  bsel.innerHTML='<option value="">— بدون فرع —</option>'+branches.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
+  // last session
+  const last=await get('/api/sessions/'+clientId+'/last');
+  const hint=document.getElementById('auto-fill-hint');
+  if(last&&last.curr_date){
+    document.getElementById('m-prev-date').value=last.curr_date;
+    document.getElementById('m-prev-time').value=last.curr_time;
+    hint.style.display='block';
+  }else{
+    document.getElementById('m-prev-date').value=today();
+    document.getElementById('m-prev-time').value='00:00:00';
+    hint.style.display='none';
+  }
+}
+
+function liveMatch(){
+  const nc=parseInt(document.getElementById('m-net-count').value)||0;
+  const na=parseFloat(document.getElementById('m-net-amount').value)||0;
+  const pc=parseInt(document.getElementById('m-prog-count').value)||0;
+  const pa=parseFloat(document.getElementById('m-prog-amount').value)||0;
+  if(!nc&&!na&&!pc&&!pa){document.getElementById('match-result-box').style.display='none';return;}
+  const dc=nc-pc, da=na-pa;
+  let status,cls;
+  if(dc===0&&da===0){status='متطابقة';cls='match-ok';}
+  else if(Math.abs(dc)<=2&&Math.abs(da)<=100){status='تحتاج مراجعة';cls='match-warn';}
+  else{status='يوجد فرق';cls='match-diff';}
+  const pct=nc>0?Math.round((1-Math.abs(dc)/nc)*100):100;
+  const box=document.getElementById('match-result-box');
+  box.className='match-box '+cls;box.style.display='block';
+  document.getElementById('mr-title').textContent=status==='متطابقة'?'✅ متطابقة':status==='تحتاج مراجعة'?'⚠️ تحتاج مراجعة':'❌ يوجد فرق';
+  document.getElementById('mr-sub').textContent=`الشبكة: ${fmtN(nc)} عملية / ${fmt(na)} ر.س  |  البرنامج: ${fmtN(pc)} فاتورة / ${fmt(pa)} ر.س`;
+  document.getElementById('mr-diff-count').textContent=(dc>=0?'+':'')+fmtN(dc)+' عملية';
+  document.getElementById('mr-diff-amount').textContent=(da>=0?'+':'')+fmt(da)+' ر.س';
+  document.getElementById('mr-pct').textContent=pct+'%';
+}
+
+async function saveSession(){
+  const pd=document.getElementById('m-prev-date').value;
+  const pt=document.getElementById('m-prev-time').value;
+  const cd=document.getElementById('m-curr-date').value;
+  const ct=document.getElementById('m-curr-time').value;
+  if(!pd||!pt||!cd||!ct){toast('أدخل التاريخ والوقت كاملاً','e');return;}
+  const nc=parseInt(document.getElementById('m-net-count').value)||0;
+  const na=parseFloat(document.getElementById('m-net-amount').value)||0;
+  const pc=parseInt(document.getElementById('m-prog-count').value)||0;
+  const pa=parseFloat(document.getElementById('m-prog-amount').value)||0;
+  const result=await post('/api/sessions',{
+    client_id:parseInt(document.getElementById('m-client').value),
+    branch_id:document.getElementById('m-branch').value||null,
+    prev_date:pd,prev_time:pt,curr_date:cd,curr_time:ct,
+    net_tx_count:nc,net_tx_amount:na,prog_inv_count:pc,prog_inv_amount:pa,
+    notes:document.getElementById('m-notes').value
+  });
+  toast(`تم الحفظ — ${result.match_status}`);
+  document.getElementById('m-net-count').value='';document.getElementById('m-net-amount').value='';
+  document.getElementById('m-prog-count').value='';document.getElementById('m-prog-amount').value='';
+  document.getElementById('m-notes').value='';
+  await loadLastSession();await loadMatchHistory();
+}
+
+async function loadMatchHistory(){
+  const clientId=document.getElementById('match-filter-client')?.value||'';
+  const url=clientId?`/api/sessions/${clientId}`:'/api/sessions/0';
+  // fetch all if no filter
+  let sessions;
+  if(clientId){sessions=await get(`/api/sessions/${clientId}`);}
+  else{
+    const clients=await get('/api/clients');
+    const all=await Promise.all(clients.map(c=>get(`/api/sessions/${c.id}`)));
+    sessions=all.flat().sort((a,b)=>b.curr_date.localeCompare(a.curr_date));
+  }
+  const el=document.getElementById('match-history');
+  if(!sessions.length){el.innerHTML='<div class="empty"><div class="empty-t">لا توجد جلسات</div></div>';return;}
+  el.innerHTML=`<div class="tbl-wrap"><table><thead><tr><th>العميل</th><th>البداية</th><th>النهاية</th><th>شبكة</th><th>برنامج</th><th>فرق العمليات</th><th>فرق المبلغ</th><th>الحالة</th></tr></thead>
+  <tbody>${sessions.map(s=>`<tr>
+    <td style="font-weight:500">${s.client_name||'—'}</td>
+    <td style="font-size:11px">${s.prev_date}<br><span style="color:var(--muted)">${s.prev_time}</span></td>
+    <td style="font-size:11px">${s.curr_date}<br><span style="color:var(--muted)">${s.curr_time}</span></td>
+    <td style="text-align:center">${fmtN(s.net_tx_count)} / ${fmt(s.net_tx_amount)}</td>
+    <td style="text-align:center">${fmtN(s.prog_inv_count)} / ${fmt(s.prog_inv_amount)}</td>
+    <td style="text-align:center;color:${s.diff_count!=0?'var(--danger)':'var(--success)'};font-weight:600">${s.diff_count>=0?'+':''}${fmtN(s.diff_count)}</td>
+    <td style="color:${s.diff_amount!=0?'var(--danger)':'var(--success)'};font-weight:600">${s.diff_amount>=0?'+':''}${fmt(s.diff_amount)}</td>
+    <td>${sBadge(s.match_status)}</td>
+  </tr>`).join('')}</tbody></table></div>`;
+}
+
+// ══ Visits ════════════════════════════════════════════════════════════════════
+async function loadVisits(){
+  const clients=await get('/api/clients');
+  const vf=document.getElementById('visits-filter');
+  const prev=vf.value;
+  vf.innerHTML='<option value="">الكل</option>'+clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  if(prev)vf.value=prev;
+  const clientId=vf.value;
+  let visits;
+  if(clientId){visits=await get(`/api/visits/${clientId}`);}
+  else{const all=await Promise.all(clients.map(c=>get(`/api/visits/${c.id}`)));visits=all.flat().sort((a,b)=>b.visit_date.localeCompare(a.visit_date));}
+
+  // populate visit modal client select
+  document.getElementById('v-client').innerHTML=clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+
+  document.getElementById('visits-list').innerHTML=visits.length?visits.map(v=>
+    `<div style="padding:10px 0;border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="showVisitDetail(${JSON.stringify(v).replace(/"/g,'&quot;')})">
+       <div style="display:flex;justify-content:space-between;align-items:center">
+         <div><span style="font-weight:600">${v.visit_date} ${v.visit_time}</span> · <span style="color:var(--muted)">${v.visitor_name||''}</span></div>
+         <div style="display:flex;gap:6px">${sBadge(v.visit_type)} ${sBadge(v.status)}</div>
+       </div>
+       ${v.summary?`<div style="font-size:12px;color:var(--muted);margin-top:3px">${v.summary.slice(0,80)}...</div>`:''}
+     </div>`).join(''):'<div class="empty"><div class="empty-t">لا توجد زيارات</div></div>';
+}
+
+function showVisitDetail(v){
+  document.getElementById('visit-detail-panel').innerHTML=`
+    <div class="card">
+      <div class="card-header">
+        <div><div style="font-size:14px;font-weight:700">${v.visit_date} ${v.visit_time}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${v.visitor_name||''}</div></div>
+        <div style="display:flex;gap:6px;align-items:center">${sBadge(v.visit_type)} ${sBadge(v.status)}
+          <button class="btn btn-sm" onclick="openEditVisit(${v.id})">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteVisit(${v.id})">🗑</button>
+        </div>
+      </div>
+      ${section('📝 الملخص',v.summary)}
+      ${section('🔍 المشكلات',v.issues)}
+      ${section('💡 التوصيات',v.recommendations)}
+      ${section('⚡ الإجراءات المطلوبة',v.actions)}
+      ${v.next_visit_date?`<div style="margin-top:10px;padding:10px;background:#dbeafe;border-radius:8px;font-size:13px">📅 الزيارة القادمة: <strong>${v.next_visit_date}</strong></div>`:''}
+    </div>`;
+}
+function section(title,text){return text?`<div style="margin-bottom:10px"><div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px">${title}</div><div style="font-size:13px;line-height:1.6">${text}</div></div>`:'';}
+
+function openVisitModal(){document.getElementById('v-id').value='';document.getElementById('v-date').value=today();document.getElementById('v-time').value=nowTime().slice(0,5);openModal('modal-visit');}
+async function openEditVisit(id){
+  const clients=await get('/api/clients');
+  let visit=null;
+  for(const c of clients){const vs=await get(`/api/visits/${c.id}`);const f=vs.find(v=>v.id===id);if(f){visit=f;break;}}
+  if(!visit)return;
+  document.getElementById('v-id').value=visit.id;
+  document.getElementById('v-client').value=visit.client_id;
+  document.getElementById('v-date').value=visit.visit_date;
+  document.getElementById('v-time').value=visit.visit_time;
+  document.getElementById('v-visitor').value=visit.visitor_name||'';
+  document.getElementById('v-type').value=visit.visit_type;
+  document.getElementById('v-status').value=visit.status;
+  document.getElementById('v-summary').value=visit.summary||'';
+  document.getElementById('v-issues').value=visit.issues||'';
+  document.getElementById('v-recs').value=visit.recommendations||'';
+  document.getElementById('v-actions').value=visit.actions||'';
+  document.getElementById('v-next').value=visit.next_visit_date||'';
+  openModal('modal-visit');
+}
+async function saveVisit(){
+  const id=document.getElementById('v-id').value;
+  const data={
+    client_id:parseInt(document.getElementById('v-client').value),
+    visit_date:document.getElementById('v-date').value,
+    visit_time:document.getElementById('v-time').value,
+    visitor_name:document.getElementById('v-visitor').value,
+    visit_type:document.getElementById('v-type').value,
+    status:document.getElementById('v-status').value,
+    summary:document.getElementById('v-summary').value,
+    issues:document.getElementById('v-issues').value,
+    recommendations:document.getElementById('v-recs').value,
+    actions:document.getElementById('v-actions').value,
+    next_visit_date:document.getElementById('v-next').value,
+  };
+  if(id)await put('/api/visits/'+id,data);else await post('/api/visits',data);
+  closeModal('modal-visit');toast('تم حفظ الزيارة');await loadVisits();
+}
+async function deleteVisit(id){if(!confirm('حذف الزيارة؟'))return;await del('/api/visits/'+id);toast('تم الحذف');document.getElementById('visit-detail-panel').innerHTML='<div class="card"><div class="empty"><div class="empty-icon">📋</div><div class="empty-t">اختر زيارة</div></div></div>';await loadVisits();}
+
+// ══ Checklists ════════════════════════════════════════════════════════════════
+async function loadChecklistPage(){
+  const clients=await get('/api/clients');
+  const sel=document.getElementById('chk-client');
+  sel.innerHTML=clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  await loadChecklist();
+}
+function switchChkTab(cat,el){
+  document.querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');chkCategory=cat;
+  document.getElementById('chk-tab-title').textContent=cat;
+  loadChecklist();
+}
+async function loadChecklist(){
+  const clientId=document.getElementById('chk-client').value;
+  if(!clientId)return;
+  const items=await get(`/api/checklists/${clientId}?category=${encodeURIComponent(chkCategory)}`);
+  const done=items.filter(i=>i.done).length,total=items.length,pct=total?Math.round(done/total*100):0;
+  document.getElementById('chk-pct').textContent=`${done}/${total} (${pct}%)`;
+  document.getElementById('chk-fill').style.width=pct+'%';
+  document.getElementById('chk-items').innerHTML=items.map(item=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9">
+      <input type="checkbox" ${item.done?'checked':''} onchange="toggleChk(${item.id},this.checked)" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0">
+      <span style="flex:1;font-size:13px;color:${item.done?'var(--muted)':'var(--text)'};text-decoration:${item.done?'line-through':'none'}">${item.item}</span>
+      <button class="btn btn-danger btn-sm btn-icon" onclick="deleteChkItem(${item.id})">🗑</button>
+    </div>`).join('');
+}
+async function toggleChk(id,done){await put(`/api/checklists/${id}`,{done:done?1:0});await loadChecklist();}
+function openAddChkItem(){openModal('modal-chk-item');document.getElementById('chk-new-item').value='';}
+async function saveChkItem(){
+  const clientId=document.getElementById('chk-client').value;
+  const item=document.getElementById('chk-new-item').value.trim();
+  if(!item){toast('أدخل نص البند','e');return;}
+  await post('/api/checklists',{client_id:parseInt(clientId),category:chkCategory,item});
+  closeModal('modal-chk-item');toast('تم إضافة البند');await loadChecklist();
+}
+async function deleteChkItem(id){if(!confirm('حذف البند؟'))return;await del('/api/checklists/'+id);toast('تم الحذف');await loadChecklist();}
+
+// ══ E-Fatura ══════════════════════════════════════════════════════════════════
+const EFATURA_ITEMS=[
+  {id:'reg',    text:'تسجيل المنشأة في منصة فاتورة',         required:true},
+  {id:'csid',   text:'صحة شهادة CSID وتاريخ انتهائها',       required:true},
+  {id:'zatca',  text:'إعدادات الربط مع ZATCA صحيحة',         required:true},
+  {id:'xml',    text:'ملفات XML تُصدَّر بالبنية الصحيحة',    required:true},
+  {id:'sig',    text:'التوقيع الرقمي على جميع الفواتير',      required:true},
+  {id:'codes',  text:'أكواد التصنيف الضريبي صحيحة',          required:true},
+  {id:'uuid',   text:'حقول UUID وICV مكتملة',                 required:true},
+  {id:'logs',   text:'سجلات الإرسال والاستلام نشطة',          required:false},
+  {id:'reject', text:'معالجة الفواتير المرفوضة',              required:false},
+  {id:'prod',   text:'الاتصال بالبيئة الإنتاجية يعمل',       required:false},
+];
+function loadEfatura(){
+  efaturaItems=EFATURA_ITEMS.map(i=>({...i,checked:false}));
+  renderEfaturaItems();
+}
+function renderEfaturaItems(){
+  const done=efaturaItems.filter(i=>i.checked).length;
+  const total=efaturaItems.length;
+  const pct=Math.round(done/total*100);
+  document.getElementById('ef-pct').textContent=`${done}/${total} (${pct}%)`;
+  document.getElementById('ef-pct-big').textContent=pct+'%';
+  document.getElementById('ef-pct-big').style.color=pct>=80?'var(--success)':pct>=50?'var(--warning)':'var(--danger)';
+  document.getElementById('ef-fill').style.width=pct+'%';
+  document.getElementById('ef-items').innerHTML=efaturaItems.map((item,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f1f5f9">
+      <input type="checkbox" ${item.checked?'checked':''} onchange="toggleEf(${i},this.checked)" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0">
+      <span style="flex:1;font-size:13px;color:${item.checked?'var(--muted)':'var(--text)'};text-decoration:${item.checked?'line-through':'none'}">${item.text}</span>
+      ${item.required?'<span class="badge b-r" style="font-size:10px">إلزامي</span>':'<span class="badge b-gray" style="font-size:10px">اختياري</span>'}
+    </div>`).join('');
+  const req=efaturaItems.filter(i=>i.required);const reqDone=req.filter(i=>i.checked).length;
+  document.getElementById('ef-summary').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="background:#dcfce7;border-radius:8px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:var(--success)">${reqDone}/${req.length}</div><div style="font-size:11px;color:var(--muted)">متطلبات إلزامية</div></div>
+      <div style="background:#dbeafe;border-radius:8px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:var(--accent)">${done-reqDone}/${total-req.length}</div><div style="font-size:11px;color:var(--muted)">متطلبات اختيارية</div></div>
+    </div>`;
+}
+function toggleEf(i,checked){efaturaItems[i].checked=checked;renderEfaturaItems();}
+function switchEfaturaTab(tab,el){
+  document.querySelectorAll('#page-efatura .tabs .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('ef-checklist').style.display=tab==='checklist'?'block':'none';
+  document.getElementById('ef-xml').style.display=tab==='xml'?'block':'none';
+}
+
+// XML Checker
+function checkXML(){
+  const xml=document.getElementById('xml-input').value.trim();
+  const el=document.getElementById('xml-results');
+  if(!xml){toast('الصق محتوى XML أولاً','e');return;}
+  const results=[];
+  const ok=(msg)=>results.push({type:'ok',msg});
+  const err=(msg)=>results.push({type:'err',msg});
+  const warn=(msg)=>results.push({type:'warn',msg});
+  const info=(msg)=>results.push({type:'info',msg});
+
+  // Parse
+  let doc;
+  try{const parser=new DOMParser();doc=parser.parseFromString(xml,'text/xml');
+    const pe=doc.querySelector('parsererror');
+    if(pe){err('❌ خطأ في بنية XML: '+pe.textContent.slice(0,100));renderXMLResults(results);return;}
+    ok('✅ بنية XML صحيحة — تم التحليل بنجاح');}
+  catch(e){err('خطأ في التحليل');renderXMLResults(results);return;}
+
+  // Namespace check
+  const rootNS=doc.documentElement.getAttribute('xmlns');
+  if(rootNS&&rootNS.includes('ubl')){ok('✅ UBL Namespace موجود');}
+  else warn('⚠️ UBL Namespace غير موجود أو غير صحيح — المتوقع: urn:oasis:names:specification:ubl:schema:xsd:Invoice-2');
+
+  // Root element
+  const root=doc.documentElement.localName;
+  if(root==='Invoice'){ok('✅ العنصر الجذري Invoice صحيح');}
+  else err(`❌ العنصر الجذري "${root}" غير صحيح — المتوقع: Invoice`);
+
+  // Mandatory fields
+  const fields={
+    'cbc:ID':           'رقم الفاتورة (ID)',
+    'cbc:IssueDate':    'تاريخ الإصدار (IssueDate)',
+    'cbc:IssueTime':    'وقت الإصدار (IssueTime)',
+    'cbc:InvoiceTypeCode':'كود نوع الفاتورة (InvoiceTypeCode)',
+    'cbc:DocumentCurrencyCode':'رمز العملة (DocumentCurrencyCode)',
+    'cac:AccountingSupplierParty':'بيانات المورد',
+    'cac:AccountingCustomerParty':'بيانات العميل',
+    'cac:TaxTotal':'ملخص الضريبة (TaxTotal)',
+    'cac:LegalMonetaryTotal':'الإجماليات المالية (LegalMonetaryTotal)',
+    'cac:InvoiceLine':'سطر الفاتورة (InvoiceLine)',
+  };
+  for(const[tag,label]of Object.entries(fields)){
+    const el2=doc.querySelector(tag.replace('cbc:','').replace('cac:',''));
+    const found=doc.getElementsByTagNameNS('*',tag.split(':')[1]).length>0||doc.querySelector(tag)!==null;
+    // try all
+    const tagName=tag.split(':')[1];
+    const nodes=doc.getElementsByTagName(tagName);
+    if(nodes.length>0){ok(`✅ ${label} موجود`);}
+    else err(`❌ ${label} مفقود (${tag})`);
+  }
+
+  // UUID check
+  const uuid=doc.getElementsByTagName('UUID')[0];
+  if(uuid){const uv=uuid.textContent;
+    if(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uv)){ok('✅ UUID بالصيغة الصحيحة');}
+    else warn('⚠️ UUID موجود لكن الصيغة غير صحيحة: '+uv);}
+  else err('❌ UUID مفقود');
+
+  // ICV
+  const icv=doc.getElementsByTagName('ICV')[0];
+  if(icv){const iv=parseInt(icv.textContent);
+    if(iv>0){ok('✅ ICV موجود: '+iv);}else warn('⚠️ ICV يجب أن يكون أكبر من صفر');}
+  else err('❌ ICV (رقم الفاتورة التسلسلي) مفقود');
+
+  // PIH (Previous Invoice Hash)
+  const pih=doc.getElementsByTagName('PIH')[0];
+  if(pih){ok('✅ PIH (ختم الفاتورة السابقة) موجود');}
+  else warn('⚠️ PIH غير موجود — مطلوب في بيئة الإنتاج');
+
+  // Signature
+  const sig=doc.getElementsByTagName('Signature')[0]||doc.getElementsByTagName('UBLExtensions')[0];
+  if(sig){ok('✅ عنصر التوقيع الرقمي موجود');}
+  else err('❌ التوقيع الرقمي (UBLExtensions/Signature) مفقود');
+
+  // Tax Category
+  const taxCat=doc.getElementsByTagName('TaxCategoryID')[0]||doc.getElementsByTagName('ID')[0];
+  const allIDs=[...doc.getElementsByTagName('ID')].map(n=>n.textContent);
+  const validCats=['S','Z','E','O'];
+  const hasTaxCat=validCats.some(c=>allIDs.includes(c));
+  if(hasTaxCat){ok('✅ كود التصنيف الضريبي موجود');}
+  else warn('⚠️ تأكد من وجود كود التصنيف الضريبي (S/Z/E/O)');
+
+  // Issue date format
+  const issueDateEl=doc.getElementsByTagName('IssueDate')[0];
+  if(issueDateEl){const d=issueDateEl.textContent;
+    if(/^\d{4}-\d{2}-\d{2}$/.test(d)){ok(`✅ تنسيق تاريخ الإصدار صحيح: ${d}`);}
+    else err(`❌ تنسيق تاريخ الإصدار غير صحيح: ${d} — المتوقع: YYYY-MM-DD`);}
+
+  // Summary
+  const errs=results.filter(r=>r.type==='err').length;
+  const warns=results.filter(r=>r.type==='warn').length;
+  info(`────────────────────────`);
+  info(`📊 ملخص الفحص: ${results.filter(r=>r.type==='ok').length} نجاح  |  ${warns} تحذير  |  ${errs} خطأ`);
+  if(errs===0&&warns===0){ok('🎉 الفاتورة تجتاز فحص ZATCA الأساسي');}
+  else if(errs===0){warn('⚠️ الفاتورة بها تحذيرات — راجعها قبل الإرسال');}
+  else{err('❌ الفاتورة بها أخطاء — يجب إصلاحها قبل الإرسال لـ ZATCA');}
+
+  renderXMLResults(results);
+}
+function renderXMLResults(results){
+  document.getElementById('xml-results').innerHTML=`<div class="xml-result">${results.map(r=>`<div class="xml-${r.type}">${r.msg}</div>`).join('')}</div>`;
+}
+
+// ══ Contracts ════════════════════════════════════════════════════════════════
+async function loadContracts(){
+  const contracts=await get('/api/contracts');
+  const totalAgreed=contracts.reduce((s,c)=>s+c.agreed_amount,0);
+  const totalPaid=contracts.reduce((s,c)=>s+c.paid_amount,0);
+  const totalRem=contracts.reduce((s,c)=>s+c.remaining,0);
+  document.getElementById('contracts-stats').innerHTML=
+    `<div class="stat"><div class="stat-icon ic-blue">📋</div><div class="stat-info"><div class="stat-v">${contracts.length}</div><div class="stat-l">إجمالي العقود</div></div></div>
+     <div class="stat"><div class="stat-icon ic-green">💰</div><div class="stat-info"><div class="stat-v" style="font-size:18px;color:var(--success)">${fmt(totalPaid)}</div><div class="stat-l">إجمالي المدفوع ر.س</div></div></div>
+     <div class="stat"><div class="stat-icon ic-red">⏳</div><div class="stat-info"><div class="stat-v" style="font-size:18px;color:var(--danger)">${fmt(totalRem)}</div><div class="stat-l">إجمالي المتبقي ر.س</div></div></div>`;
+  document.getElementById('contracts-table').innerHTML=`<table>
+    <thead><tr><th>المتعاقد</th><th>الوصف</th><th>المتفق عليه</th><th>المدفوع</th><th>المتبقي</th><th>الاستحقاق</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+    <tbody>${contracts.map(c=>{
+      const pct=c.agreed_amount?Math.round(c.paid_amount/c.agreed_amount*100):0;
+      return`<tr>
+        <td><strong>${c.contractor_name}</strong></td>
+        <td style="color:var(--muted);font-size:12px">${c.description||'—'}</td>
+        <td>${fmt(c.agreed_amount)}</td>
+        <td style="color:var(--success);font-weight:600">${fmt(c.paid_amount)}</td>
+        <td style="color:${c.remaining>0?'var(--danger)':'var(--success)'};font-weight:600">${fmt(c.remaining)}</td>
+        <td>${c.due_date||'—'}</td>
+        <td>${sBadge(c.status)}</td>
+        <td style="display:flex;gap:4px">
+          <button class="btn btn-sm btn-success" onclick="openPaymentModal(${c.id})" title="تسجيل دفعة">💳</button>
+          <button class="btn btn-danger btn-sm btn-icon" onclick="deleteContract(${c.id})">🗑</button>
+        </td>
+      </tr>
+      <tr style="background:#f8fafc">
+        <td colspan="8" style="padding:4px 12px">
+          <div style="font-size:11px;color:var(--muted)">
+            المدفوعات: ${c.payments.map(p=>`${p.pay_date}: ${fmt(p.amount)} ر.س`).join(' | ')||'لا توجد مدفوعات'}
+            · نسبة السداد: ${pct}%
+          </div>
+          <div class="prog-bar" style="margin-top:4px;margin-bottom:4px"><div class="prog-fill" style="width:${pct}%"></div></div>
+        </td>
+      </tr>`;}).join('')}</tbody></table>`;
+}
+async function saveContract(){
+  const name=document.getElementById('ct-name').value.trim();
+  if(!name){toast('اسم المتعاقد مطلوب','e');return;}
+  await post('/api/contracts',{contractor_name:name,description:document.getElementById('ct-desc').value,agreed_amount:parseFloat(document.getElementById('ct-amount').value)||0,due_date:document.getElementById('ct-due').value,status:document.getElementById('ct-status').value,notes:document.getElementById('ct-notes').value});
+  closeModal('modal-contract');toast('تم إضافة العقد');loadContracts();
+}
+async function deleteContract(id){if(!confirm('حذف العقد وجميع مدفوعاته؟'))return;await del('/api/contracts/'+id);toast('تم الحذف');loadContracts();}
+function openPaymentModal(contractId){document.getElementById('pay-contract-id').value=contractId;document.getElementById('pay-date').value=today();document.getElementById('pay-amount').value='';document.getElementById('pay-notes').value='';openModal('modal-payment');}
+async function savePayment(){
+  const amount=parseFloat(document.getElementById('pay-amount').value)||0;
+  if(!amount){toast('أدخل المبلغ','e');return;}
+  await post('/api/payments',{contract_id:parseInt(document.getElementById('pay-contract-id').value),amount,pay_date:document.getElementById('pay-date').value,notes:document.getElementById('pay-notes').value});
+  closeModal('modal-payment');toast('تم تسجيل الدفعة');loadContracts();
+}
+
+// ══ Devices ═══════════════════════════════════════════════════════════════════
+async function loadDevicesPage(){
+  const clients=await get('/api/clients');
+  const sel=document.getElementById('dev-client-filter');
+  const devSel=document.getElementById('dev-client');
+  const prev=sel.value;
+  sel.innerHTML=clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  devSel.innerHTML=clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  if(prev)sel.value=prev;
+  await loadDevices();
+}
+async function loadDevices(){
+  const clientId=document.getElementById('dev-client-filter').value;
+  if(!clientId)return;
+  const devices=await get(`/api/devices/${clientId}`);
+  document.getElementById('devices-tbody').innerHTML=devices.length?devices.map(d=>`<tr>
+    <td style="font-family:monospace;font-size:12px">${d.device_uid||'—'}</td>
+    <td><strong>${d.name}</strong></td>
+    <td><span class="badge b-b">${d.type}</span></td>
+    <td>${d.branch_name||'—'}</td>
+    <td>${d.bank_name||'—'}</td>
+    <td>${d.location||'—'}</td>
+    <td>${sBadge(d.status)}</td>
+    <td><button class="btn btn-danger btn-sm btn-icon" onclick="deleteDevice(${d.id})">🗑</button></td>
+  </tr>`).join(''):'<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px">لا توجد أجهزة</td></tr>';
+}
+async function loadDevModalBranches(){
+  const clientId=document.getElementById('dev-client').value;
+  const branches=await get('/api/branches/'+clientId);
+  document.getElementById('dev-branch').innerHTML='<option value="">— بدون —</option>'+branches.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
+}
+async function saveDevice(){
+  const name=document.getElementById('dev-name').value.trim();
+  if(!name){toast('اسم الجهاز مطلوب','e');return;}
+  await post('/api/devices',{client_id:parseInt(document.getElementById('dev-client').value),branch_id:document.getElementById('dev-branch').value||null,device_uid:document.getElementById('dev-uid').value,name,type:document.getElementById('dev-type').value,location:document.getElementById('dev-loc').value,status:document.getElementById('dev-status').value});
+  closeModal('modal-device');toast('تم إضافة الجهاز');await loadDevices();
+}
+async function deleteDevice(id){if(!confirm('حذف الجهاز؟'))return;await del('/api/devices/'+id);toast('تم الحذف');await loadDevices();}
+
+// ══ Alerts ════════════════════════════════════════════════════════════════════
+async function loadAlerts(){
+  const alerts=await get('/api/alerts');
+  document.getElementById('alerts-list').innerHTML=alerts.length?alerts.map(a=>
+    `<div class="alert-strip as-${a.level==='danger'?'d':a.level==='warning'?'w':a.level==='success'?'s':'i'}" style="margin-bottom:8px">
+       <span style="font-size:18px;flex-shrink:0">${a.level==='danger'?'🔴':a.level==='warning'?'🟡':a.level==='success'?'🟢':'🔵'}</span>
+       <div style="flex:1"><div>${a.message}</div><div style="font-size:11px;opacity:.7;margin-top:2px">${a.client_name||''} · ${a.created_at||''}</div></div>
+       <button onclick="delAlert(${a.id})" style="background:none;border:none;cursor:pointer;opacity:.5;font-size:16px">✕</button>
+     </div>`).join(''):'<div class="empty"><div class="empty-icon">✅</div><div class="empty-t">لا توجد تنبيهات</div></div>';
+}
+async function delAlert(id){await del('/api/alerts/'+id);loadAlerts();loadAlertCount();}
+
+// ══ Helpers ═══════════════════════════════════════════════════════════════════
+async function populateClientSelects(){
+  const clients=allClients.length?allClients:await get('/api/clients');
+  ['v-client','dev-client-filter','dev-client','chk-client'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.innerHTML=clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  });
+  // visits filter
+  const vf=document.getElementById('visits-filter');
+  if(vf)vf.innerHTML='<option value="">الكل</option>'+clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+}
+async function openClientDetail(id){
+  showPage('clients');
+  setTimeout(()=>openClientDetail_inner(id),100);
+}
+async function openClientDetail_inner(id){
+  allClients=allClients.length?allClients:await get('/api/clients');
+  renderClientList(allClients);
+  const data=await get(`/api/clients/${id}`);
+  currentClient=data.client;
+  document.querySelectorAll('.client-item').forEach(el=>el.classList.remove('selected'));
+  document.getElementById(`cli-${id}`)?.classList.add('selected');
+  const panel=document.getElementById('client-detail-panel');
+  panel.innerHTML=`
+    <div class="card">
+      <div class="card-header">
+        <div><div style="font-size:16px;font-weight:700;color:var(--primary)">${data.client.name}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${data.client.sector||''} · ${data.client.tax_number||''} · ${data.client.tax_type||''}</div></div>
+        <div style="display:flex;gap:6px;align-items:center">${rBadge(data.client.risk)} ${sBadge(data.client.status)}
+          <button class="btn btn-danger btn-sm" onclick="deleteClient(${id})">🗑 حذف</button>
+        </div>
+      </div>
+      ${data.client.notes?`<div style="font-size:12px;color:var(--muted);background:#f8fafc;padding:8px 12px;border-radius:8px;margin-bottom:12px">${data.client.notes}</div>`:''}
+      <div class="tabs" id="client-tabs">
+        <button class="tab active" onclick="switchClientTab('branches',this,${id})">🏢 الفروع (${data.branches.length})</button>
+        <button class="tab" onclick="switchClientTab('sessions',this,${id})">⚖️ المطابقات (${data.sessions.length})</button>
+        <button class="tab" onclick="switchClientTab('visits',this,${id})">📅 الزيارات (${data.visits.length})</button>
+        <button class="tab" onclick="switchClientTab('banks',this,${id})">🏦 البنوك (${data.banks.length})</button>
+        <button class="tab" onclick="switchClientTab('devices',this,${id})">📟 الأجهزة (${data.devices.length})</button>
+      </div>
+      <div id="client-tab-content"></div>
+    </div>`;
+  renderClientTab('branches',data,id);
+}
+
+// ══ Init ══════════════════════════════════════════════════════════════════════
+// ══ Auth Guard ═══════════════════════════════════════════════════════════════
+const TOKEN = () => localStorage.getItem('tax_token');
+const USER  = () => { try { return JSON.parse(localStorage.getItem('tax_user')||'{}'); } catch{return {};} };
+
+function authHeaders() {
+  return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN() };
+}
+
+function _handleAuthError(status, detail) {
+  if (status === 401) { logout(); return true; }
+  if (status === 403) { toast(detail || 'ليس لديك صلاحية لهذا الإجراء', 'e'); return true; }
+  return false;
+}
+
+// Override var helpers with authenticated versions
+get  = async url => {
+  const r = await fetch(url, { headers: authHeaders() });
+  if (_handleAuthError(r.status, null)) return Array.isArray([]) ? [] : {};
+  return r.json();
+};
+post = async (url, d) => {
+  const r = await fetch(url, { method:'POST', headers: authHeaders(), body: JSON.stringify(d) });
+  const j = await r.json();
+  if (_handleAuthError(r.status, j.detail)) return j;
+  return j;
+};
+put = async (url, d) => {
+  const r = await fetch(url, { method:'PUT', headers: authHeaders(), body: JSON.stringify(d) });
+  const j = await r.json();
+  if (_handleAuthError(r.status, j.detail)) return j;
+  return j;
+};
+del = async url => {
+  const r = await fetch(url, { method:'DELETE', headers: authHeaders() });
+  const j = await r.json();
+  if (_handleAuthError(r.status, j.detail)) return j;
+  return j;
+};
+
+function logout() {
+  localStorage.removeItem('tax_token');
+  localStorage.removeItem('tax_user');
+  window.location.href = '/login';
+}
+
+function checkPermission(perm) {
+  const user = USER();
+  return (user.permissions || []).includes(perm);
+}
+
+function guardAuth() {
+  const token = TOKEN();
+  if (!token) { window.location.href = '/login'; return false; }
+  return true;
+}
+
+function renderUserBadge() {
+  const user = USER();
+  if (!user.username) return;
+  const roleColors = { admin:'#dc2626', reviewer:'#4f8ef7', viewer:'#16a34a', client:'#7c3aed' };
+  const color = roleColors[user.role] || '#64748b';
+  const topbar = document.querySelector('.topbar-right');
+  if (topbar) {
+    topbar.insertAdjacentHTML('afterbegin', `
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px">
+        <span style="font-size:12px;color:#1e293b;font-weight:500">${user.full_name||user.username}</span>
+        <span style="font-size:10px;padding:2px 7px;border-radius:4px;background:${color}20;color:${color};font-weight:600">${user.role_label||user.role}</span>
+      </div>
+      ${user.role==='admin' ? `<button class="btn btn-sm" onclick="showPage('users')" style="font-size:11px">👥 المستخدمون</button>` : ''}
+      <button class="btn btn-sm" onclick="openChangePassword()" style="font-size:11px">🔑</button>
+      <button class="btn btn-sm" onclick="logout()" style="font-size:11px;color:#dc2626">خروج</button>
+    `);
+  }
+
+  // Show/hide nav items based on role
+  const isAdmin    = user.role === 'admin';
+  const isReviewer = user.role === 'reviewer';
+
+  // Approvals visible to admin + reviewer
+  if (isAdmin || isReviewer) {
+    const approvalNav = document.getElementById('nav-approvals');
+    const cpNav       = document.getElementById('nav-client-portal');
+    if (approvalNav) approvalNav.style.display = 'flex';
+    if (cpNav && isAdmin) cpNav.style.display = 'flex';
+  }
+
+  // Show portal link only for admin/reviewer (clients go directly to /portal)
+  const portalLink = document.getElementById('nav-portal-link');
+  if (portalLink) {
+    if (user.role === 'client') {
+      // Redirect client to portal
+      window.location.href = '/portal';
+      return;
+    }
+    portalLink.style.display = (isAdmin||isReviewer) ? 'flex' : 'none';
+  }
+
+  // Load pending approvals count
+  if (isAdmin || isReviewer) {
+    get('/api/portal/approvals?status=pending').then(data => {
+      if (Array.isArray(data) && data.length > 0) {
+        const badge = document.getElementById('approvals-badge');
+        if (badge) { badge.textContent = data.length; badge.style.display = 'inline-flex'; }
+        // Also notify in topbar
+        toast(`لديك ${data.length} طلب موافقة معلق`, 'w');
+      }
+    }).catch(()=>{});
+  }
+
+  // Hide write/delete buttons for viewers
+  if (!checkPermission('write')) {
+    document.querySelectorAll('.btn-primary, .btn-success').forEach(b => {
+      if (!b.classList.contains('keep-visible')) b.style.display = 'none';
+    });
+  }
+}
+
+// ══ Users Management Page ════════════════════════════════════════════════════
+async function loadUsersPage() {
+  if (!checkPermission('manage_users')) {
+    document.getElementById('page-users').innerHTML =
+      '<div style="text-align:center;padding:60px;color:#64748b"><div style="font-size:48px;margin-bottom:12px">🔒</div><div style="font-size:16px">هذه الصفحة للمدير فقط</div></div>';
+    return;
+  }
+  const users = await _get('/api/users');
+  const roleColors = { admin:'#dc2626', reviewer:'#4f8ef7', viewer:'#16a34a' };
+  const roleLabel  = { admin:'مدير النظام', reviewer:'مراجع', viewer:'مشاهد فقط' };
+
+  document.getElementById('page-users').innerHTML = `
+    <div class="page-header">
+      <h1 class="page-title">👥 إدارة المستخدمين</h1>
+      <button class="btn btn-primary" onclick="openModal('modal-user')">+ مستخدم جديد</button>
+    </div>
+    <div class="card">
+      <table><thead><tr><th>المستخدم</th><th>الاسم الكامل</th><th>البريد</th><th>الدور</th><th>الحالة</th><th>آخر دخول</th><th>إجراءات</th></tr></thead>
+      <tbody>${(Array.isArray(users)?users:[]).map(u=>`<tr>
+        <td><span style="font-family:monospace;font-weight:600">${u.username}</span></td>
+        <td>${u.full_name}</td>
+        <td style="font-size:11px;color:#64748b">${u.email||'—'}</td>
+        <td><span class="badge" style="background:${(roleColors[u.role]||'#64748b')}20;color:${roleColors[u.role]||'#64748b'}">${roleLabel[u.role]||u.role}</span></td>
+        <td>${u.is_active?'<span class="badge b-g">نشط</span>':'<span class="badge b-r">موقوف</span>'}</td>
+        <td style="font-size:11px;color:#64748b">${u.last_login||'لم يدخل بعد'}</td>
+        <td style="white-space:nowrap;display:flex;gap:4px">
+          <button class="btn btn-sm" onclick="openEditUser(${JSON.stringify(u).replace(/"/g,'&quot;')})" title="تعديل">✏️</button>
+          <button class="btn btn-sm" onclick="openResetPwd(${u.id},'${u.username}')" title="إعادة تعيين كلمة المرور">🔑</button>
+          ${u.username!=='admin'?`<button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id},'${u.username}')" title="حذف">🗑</button>`:''}
+        </td>
+      </tr>`).join('')}</tbody></table>
+    </div>`;
+}
+
+function openEditUser(u) {
+  document.getElementById('uu-id').value = u.id;
+  document.getElementById('uu-name').value = u.full_name;
+  document.getElementById('uu-email').value = u.email||'';
+  document.getElementById('uu-role').value = u.role;
+  document.getElementById('uu-active').value = u.is_active;
+  document.getElementById('user-modal-title').textContent = `تعديل: ${u.username}`;
+  openModal('modal-edit-user');
+}
+async function saveEditUser() {
+  const id = document.getElementById('uu-id').value;
+  await _put('/api/users/'+id, {
+    full_name: document.getElementById('uu-name').value,
+    email:     document.getElementById('uu-email').value,
+    role:      document.getElementById('uu-role').value,
+    is_active: parseInt(document.getElementById('uu-active').value),
+  });
+  closeModal('modal-edit-user');
+  toast('تم تحديث المستخدم');
+  loadUsersPage();
+}
+async function deleteUser(id, username) {
+  if (!confirm(`حذف المستخدم "${username}"؟`)) return;
+  await _del('/api/users/'+id);
+  toast('تم الحذف'); loadUsersPage();
+}
+function openResetPwd(id, username) {
+  const pwd = prompt(`كلمة المرور الجديدة للمستخدم "${username}" (8 أحرف على الأقل):`);
+  if (!pwd) return;
+  if (pwd.length < 8) { toast('كلمة المرور قصيرة جداً','e'); return; }
+  _post('/api/users/'+id+'/reset-password', { new_password: pwd })
+    .then(() => toast('تم إعادة تعيين كلمة المرور'));
+}
+
+function openChangePassword() {
+  openModal('modal-change-pwd');
+  document.getElementById('cp-old').value='';
+  document.getElementById('cp-new').value='';
+  document.getElementById('cp-confirm').value='';
+}
+async function saveChangePassword() {
+  const old_password = document.getElementById('cp-old').value;
+  const new_password = document.getElementById('cp-new').value;
+  const confirm_pwd  = document.getElementById('cp-confirm').value;
+  if (new_password !== confirm_pwd) { toast('كلمتا المرور غير متطابقتين','e'); return; }
+  if (new_password.length < 8) { toast('كلمة المرور يجب أن تكون 8 أحرف على الأقل','e'); return; }
+  const r = await _post('/api/auth/change-password', { old_password, new_password });
+  if (r.ok) { toast('تم تغيير كلمة المرور'); closeModal('modal-change-pwd'); }
+  else toast(r.detail||'خطأ','e');
+}
+
+async function saveNewUser() {
+  const username = document.getElementById('nu-username').value.trim();
+  const full_name = document.getElementById('nu-name').value.trim();
+  const password = document.getElementById('nu-password').value;
+  if (!username||!full_name||!password) { toast('أدخل جميع الحقول المطلوبة','e'); return; }
+  const r = await _post('/api/users', {
+    username, full_name, password,
+    email: document.getElementById('nu-email').value,
+    role:  document.getElementById('nu-role').value,
+  });
+  if (r.id) { closeModal('modal-user'); toast('تم إضافة المستخدم'); loadUsersPage(); }
+  else toast(r.detail||'خطأ','e');
+}
+
+// ══ Mobile Sidebar ═══════════════════════════════════════════════════════════
+function toggleSidebar(){
+  const sb=document.getElementById('main-sidebar');
+  const ov=document.getElementById('sidebar-overlay');
+  const hb=document.getElementById('hamburger-btn');
+  sb.classList.toggle('open');
+  ov.classList.toggle('open');
+  hb.classList.toggle('open');
+}
+function closeSidebar(){
+  document.getElementById('main-sidebar')?.classList.remove('open');
+  document.getElementById('sidebar-overlay')?.classList.remove('open');
+  document.getElementById('hamburger-btn')?.classList.remove('open');
+}
+// Close sidebar on nav item click (mobile)
+document.querySelectorAll('.nav-a').forEach(btn=>{
+  btn.addEventListener('click',()=>{if(window.innerWidth<=768)closeSidebar();});
+});
+
+// ══ Approvals ════════════════════════════════════════════════════════════════
+async function loadApprovals() {
+  const status   = document.getElementById('ap-filter-status')?.value || '';
+  const clientId = document.getElementById('ap-filter-client')?.value || '';
+  const params   = new URLSearchParams();
+  if (status)   params.append('status', status);
+  if (clientId) params.append('client_id', clientId);
+  const approvals = await get('/api/portal/approvals?' + params);
+  const el = document.getElementById('approvals-content');
+  if (!el) return;
+
+  // Populate client filter
+  if (!document.getElementById('ap-filter-client').children.length > 1) {
+    const clients = await get('/api/clients');
+    document.getElementById('ap-filter-client').innerHTML =
+      '<option value="">جميع العملاء</option>' +
+      (Array.isArray(clients)?clients:[]).map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  }
+
+  const pending = Array.isArray(approvals) ? approvals.filter(a=>a.status==='pending').length : 0;
+  const badge = document.getElementById('approvals-badge');
+  if (badge) { badge.textContent = pending; badge.style.display = pending ? 'inline-flex' : 'none'; }
+
+  if (!Array.isArray(approvals) || !approvals.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-t">لا توجد طلبات</div></div>';
+    return;
+  }
+
+  const statusColor = {pending:'#d97706',approved:'#16a34a',rejected:'#dc2626',request_edit:'#4f8ef7'};
+  const statusLabel = {pending:'معلق ⏳',approved:'مقبول ✅',rejected:'مرفوض ❌',request_edit:'يحتاج تعديل ✏️'};
+  const statusBg    = {pending:'#fef9c3',approved:'#dcfce7',rejected:'#fee2e2',request_edit:'#dbeafe'};
+
+  el.innerHTML = approvals.map(a => {
+    const diffC = (a.net_tx_count||0) - (a.prog_inv_count||0);
+    const diffA = ((a.net_tx_amount||0) - (a.prog_inv_amount||0)).toFixed(2);
+    const sc = statusColor[a.status]||'#64748b';
+    return `<div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;border-right:4px solid ${sc}">
+      <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+        <div>
+          <div style="font-size:14px;font-weight:700">${a.client_name}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">
+            ${a.branch_name?`فرع: ${a.branch_name} · `:''}
+            ${a.device_name?`جهاز: ${a.device_name} · `:''}
+            أُرسل بواسطة: ${a.submitted_by_name||'—'} · ${(a.submitted_at||'').slice(0,16)}
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="padding:4px 12px;border-radius:8px;font-size:12px;font-weight:700;background:${statusBg[a.status]||'#f1f5f9'};color:${sc}">${statusLabel[a.status]||a.status}</span>
+          ${a.status==='pending'?`<button class="btn btn-sm btn-primary" onclick="openReviewModal(${JSON.stringify(a).replace(/"/g,'&quot;')})">مراجعة</button>`:''}
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:12px">
+        <div style="background:#f8fafc;padding:8px;border-radius:7px;text-align:center">
+          <div style="color:var(--muted);margin-bottom:2px">🌐 الشبكة</div>
+          <div style="font-weight:600">${fmtN(a.net_tx_count)} عملية</div>
+          <div style="color:var(--muted)">${fmt(a.net_tx_amount)} ر.س</div>
+        </div>
+        <div style="background:#f8fafc;padding:8px;border-radius:7px;text-align:center">
+          <div style="color:var(--muted);margin-bottom:2px">💻 البرنامج</div>
+          <div style="font-weight:600">${fmtN(a.prog_inv_count)} فاتورة</div>
+          <div style="color:var(--muted)">${fmt(a.prog_inv_amount)} ر.س</div>
+        </div>
+        <div style="background:${diffC===0?'#dcfce7':'#fee2e2'};padding:8px;border-radius:7px;text-align:center">
+          <div style="color:var(--muted);margin-bottom:2px">الفرق</div>
+          <div style="font-weight:700;color:${diffC===0?'#15803d':'#dc2626'}">${diffC>=0?'+':''}${fmtN(diffC)} عملية</div>
+          <div style="font-weight:700;color:${Math.abs(diffA)<0.01?'#15803d':'#dc2626'}">${diffA>=0?'+':''}${fmt(diffA)} ر.س</div>
+        </div>
+      </div>
+      ${a.client_notes?`<div style="margin-top:8px;font-size:12px;color:var(--muted)">ملاحظة العميل: ${a.client_notes}</div>`:''}
+      ${a.reviewer_notes?`<div style="margin-top:6px;padding:8px 10px;background:#f0f9ff;border-radius:6px;font-size:12px;color:#0369a1">ملاحظة المدير: ${a.reviewer_notes}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function openReviewModal(a) {
+  if (typeof a === 'string') a = JSON.parse(a.replace(/&quot;/g,'"'));
+  document.getElementById('review-approval-id').value = a.id;
+  document.getElementById('review-modal-title').textContent = `مراجعة موازنة — ${a.client_name}`;
+  document.getElementById('rv-net-count').value    = '';
+  document.getElementById('rv-net-amount').value   = '';
+  document.getElementById('rv-prog-count').value   = '';
+  document.getElementById('rv-prog-amount').value  = '';
+  document.getElementById('rv-notes').value        = '';
+  const diffC = (a.net_tx_count||0) - (a.prog_inv_count||0);
+  const diffA = ((a.net_tx_amount||0)-(a.prog_inv_amount||0)).toFixed(2);
+  document.getElementById('review-session-details').innerHTML = `
+    <div style="background:#f8fafc;border-radius:10px;padding:12px;font-size:13px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+        <div><div style="color:var(--muted);font-size:11px;margin-bottom:4px">🌐 الشبكة</div>
+          <div style="font-weight:700">${fmtN(a.net_tx_count)} عملية / ${fmt(a.net_tx_amount)} ر.س</div></div>
+        <div><div style="color:var(--muted);font-size:11px;margin-bottom:4px">💻 البرنامج</div>
+          <div style="font-weight:700">${fmtN(a.prog_inv_count)} فاتورة / ${fmt(a.prog_inv_amount)} ر.س</div></div>
+        <div style="background:${diffC===0?'#dcfce7':'#fee2e2'};border-radius:8px;padding:8px">
+          <div style="color:var(--muted);font-size:11px;margin-bottom:4px">الفرق</div>
+          <div style="font-weight:700;color:${diffC===0?'#15803d':'#dc2626'}">${diffC>=0?'+':''}${fmtN(diffC)} / ${diffA>=0?'+':''}${fmt(diffA)} ر.س</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:var(--muted)">
+        الفترة: ${a.prev_date||'—'} ${a.prev_time||''} → ${a.curr_date} ${a.curr_time}
+        ${a.client_notes?` · ملاحظة العميل: ${a.client_notes}`:''}
+      </div>
+    </div>`;
+  openModal('modal-review');
+}
+
+async function doReview(action) {
+  const id = document.getElementById('review-approval-id').value;
+  const data = {
+    action,
+    reviewer_notes: document.getElementById('rv-notes').value,
+  };
+  const nc = document.getElementById('rv-net-count').value;
+  const na = document.getElementById('rv-net-amount').value;
+  const pc = document.getElementById('rv-prog-count').value;
+  const pa = document.getElementById('rv-prog-amount').value;
+  if (nc) data.net_tx_count   = parseInt(nc);
+  if (na) data.net_tx_amount  = parseFloat(na);
+  if (pc) data.prog_inv_count = parseInt(pc);
+  if (pa) data.prog_inv_amount= parseFloat(pa);
+
+  const r = await post(`/api/portal/approvals/${id}/review`, data);
+  if (r.detail) { toast(r.detail,'e'); return; }
+  const labels = {approve:'تمت الموافقة ✅',reject:'تم الرفض ❌',request_edit:'تم طلب التعديل ✏️'};
+  toast(labels[action]||'تم');
+  closeModal('modal-review');
+  loadApprovals();
+  loadAlertCount();
+}
+
+// ══ Client Portal Management ══════════════════════════════════════════════════
+async function loadClientPortalPage() {
+  if (!checkPermission('manage_users')) {
+    document.getElementById('page-client-portal').innerHTML =
+      '<div style="text-align:center;padding:60px"><div style="font-size:40px">🔒</div><div style="color:var(--muted);margin-top:10px">للمدير فقط</div></div>';
+    return;
+  }
+  const clients = await get('/api/clients');
+  const sel = document.getElementById('cp-client-sel');
+  if (sel) {
+    sel.innerHTML = '<option value="">— اختر العميل —</option>' +
+      (Array.isArray(clients)?clients:[]).map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  }
+  // Also populate modal client select
+  const cuSel = document.getElementById('cu-client');
+  if (cuSel) {
+    cuSel.innerHTML = '<option value="">— اختر العميل —</option>' +
+      (Array.isArray(clients)?clients:[]).map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  }
+}
+
+async function loadClientUsers() {
+  const clientId = document.getElementById('cp-client-sel').value;
+  const list = document.getElementById('client-users-list');
+  const panel = document.getElementById('perms-panel');
+  if (!clientId) { list.innerHTML=''; panel.innerHTML='<div class="card"><div class="empty"><div class="empty-icon">👆</div><div class="empty-t">اختر عميلاً</div></div></div>'; return; }
+
+  const users = await get(`/api/portal/client-users/${clientId}`);
+  if (!Array.isArray(users) || !users.length) {
+    list.innerHTML = '<div class="empty" style="padding:20px"><div class="empty-icon">👤</div><div class="empty-t">لا يوجد مستخدمون</div><button class="btn btn-primary" style="margin-top:10px" onclick="openModal(\'modal-client-user\')">+ إضافة</button></div>';
+    panel.innerHTML = '';
+    return;
+  }
+
+  list.innerHTML = users.map(u=>`
+    <div style="padding:10px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer" onclick="showUserPerms(${JSON.stringify(u).replace(/"/g,'&quot;')})">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-weight:600;font-size:13px">${u.full_name}</div>
+          <div style="font-size:11px;color:var(--muted);font-family:monospace">${u.username}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          ${u.is_active ? '<span class="badge b-g">نشط</span>' : '<span class="badge b-r">موقوف</span>'}
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px">
+        آخر دخول: ${u.last_login||'لم يدخل بعد'}
+      </div>
+    </div>`).join('');
+}
+
+function showUserPerms(u) {
+  if (typeof u === 'string') u = JSON.parse(u.replace(/&quot;/g,'"'));
+  const permsLabels = [
+    ['can_view_matching',   '👁 عرض المطابقات'],
+    ['can_submit_session',  '📤 رفع الموازنات'],
+    ['can_view_visits',     '📅 عرض الزيارات'],
+    ['can_view_checklists', '✅ قوائم المراجعة'],
+    ['can_view_devices',    '📟 الأجهزة'],
+    ['can_view_banks',      '🏦 الحسابات البنكية'],
+  ];
+  document.getElementById('perms-panel').innerHTML = `
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">🔑 صلاحيات: ${u.full_name}</span>
+      </div>
+      <div style="font-size:11px;color:var(--muted);font-family:monospace;margin-bottom:14px">${u.username}</div>
+      ${permsLabels.map(([key,label])=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f1f5f9">
+          <span style="font-size:13px">${label}</span>
+          <label style="display:flex;align-items:center;cursor:pointer">
+            <input type="checkbox" ${u[key]?'checked':''} onchange="updatePerm(${u.id},'${key}',this.checked)"
+              style="width:16px;height:16px;accent-color:var(--accent)">
+          </label>
+        </div>`).join('')}
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn btn-danger btn-sm" onclick="resetClientPwd(${u.id},'${u.username}')">🔑 إعادة تعيين كلمة المرور</button>
+        <button class="btn btn-sm" onclick="toggleUserActive(${u.id},${u.is_active?0:1})" style="${u.is_active?'color:#dc2626':'color:#16a34a'}">
+          ${u.is_active?'🔴 تعطيل الحساب':'🟢 تفعيل الحساب'}
+        </button>
+      </div>
+    </div>`;
+}
+
+async function updatePerm(userId, perm, value) {
+  const data = {};
+  data[perm] = value ? 1 : 0;
+  const r = await put(`/api/portal/permissions/${userId}`, data);
+  if (r.ok) toast('تم تحديث الصلاحية');
+  else toast(r.detail||'خطأ','e');
+}
+
+async function toggleUserActive(userId, newState) {
+  await put(`/api/users/${userId}`, {is_active: newState});
+  toast(newState ? 'تم تفعيل الحساب' : 'تم تعطيل الحساب');
+  loadClientUsers();
+}
+
+async function resetClientPwd(id, username) {
+  const pwd = prompt(`كلمة المرور الجديدة للمستخدم "${username}" (8 أحرف على الأقل):`);
+  if (!pwd) return;
+  if (pwd.length < 8) { toast('كلمة المرور قصيرة جداً','e'); return; }
+  const r = await post(`/api/users/${id}/reset-password`, {new_password: pwd});
+  if (r.ok) toast('تم إعادة تعيين كلمة المرور');
+  else toast(r.detail||'خطأ','e');
+}
+
+async function saveClientUser() {
+  const clientId = document.getElementById('cu-client').value;
+  const username = document.getElementById('cu-username').value.trim();
+  const fullname = document.getElementById('cu-fullname').value.trim();
+  const password = document.getElementById('cu-password').value;
+  if (!clientId || !username || !fullname || !password) { toast('أدخل جميع الحقول المطلوبة','e'); return; }
+  if (password.length < 8) { toast('كلمة المرور يجب أن تكون 8 أحرف على الأقل','e'); return; }
+
+  const r = await post('/api/portal/create-client-user', {
+    client_id:  parseInt(clientId),
+    username,
+    full_name:  fullname,
+    email:      document.getElementById('cu-email').value,
+    password,
+    can_view_matching:   document.getElementById('cu-matching').checked   ? 1:0,
+    can_submit_session:  document.getElementById('cu-submit').checked     ? 1:0,
+    can_view_visits:     document.getElementById('cu-visits').checked     ? 1:0,
+    can_view_checklists: document.getElementById('cu-checklists').checked ? 1:0,
+    can_view_devices:    document.getElementById('cu-devices').checked    ? 1:0,
+    can_view_banks:      document.getElementById('cu-banks').checked      ? 1:0,
+  });
+  if (r.detail) { toast(r.detail,'e'); return; }
+  closeModal('modal-client-user');
+  toast(`✅ تم إنشاء حساب ${username} — رابط البوابة: /portal`);
+  document.getElementById('cu-username').value='';
+  document.getElementById('cu-fullname').value='';
+  document.getElementById('cu-email').value='';
+  document.getElementById('cu-password').value='';
+  loadClientUsers();
+}
+
+// Add users to page loaders
+loaders['users']         = loadUsersPage;
+loaders['approvals']     = loadApprovals;
+loaders['client-portal'] = loadClientPortalPage;
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+if (guardAuth()) {
+  initTopbar();
+  renderUserBadge();
+  loadDashboard();
+}
+</script>
+</body>
+</html>

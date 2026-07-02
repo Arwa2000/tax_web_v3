@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>بوابة العميل</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;direction:rtl;background:#f0f4ff;color:#1e293b;min-height:100vh}
+:root{--primary:#1a1a2e;--accent:#4f8ef7;--success:#16a34a;--warning:#d97706;--danger:#dc2626;--card:#fff;--border:#e2e8f0;--muted:#64748b}
+
+.header{background:var(--primary);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.header-logo{display:flex;align-items:center;gap:10px}
+.header-logo span{font-size:22px}
+.header-title{font-size:15px;font-weight:700}
+.header-sub{font-size:11px;color:#93c5fd;margin-top:2px}
+.header-user{display:flex;align-items:center;gap:10px}
+.user-name{font-size:13px;color:#e2e8f0}
+.user-role{font-size:10px;padding:2px 8px;background:rgba(79,142,247,.3);border-radius:10px;color:#93c5fd}
+
+.main{max-width:900px;margin:0 auto;padding:20px 16px}
+
+/* Status banner */
+.status-banner{border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;font-size:13px}
+.sb-pending{background:#fef9c3;border:1px solid #fde047;color:#a16207}
+.sb-approved{background:#dcfce7;border:1px solid #86efac;color:#15803d}
+.sb-rejected{background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c}
+.sb-edit{background:#dbeafe;border:1px solid #93c3fd;color:#1d4ed8}
+.sb-icon{font-size:24px;flex-shrink:0}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px}
+.card-title{font-size:14px;font-weight:700;color:var(--primary);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat-v{font-size:26px;font-weight:700}
+.stat-l{font-size:12px;color:var(--muted);margin-top:4px}
+.c-b{color:var(--accent)}.c-g{color:var(--success)}.c-r{color:var(--danger)}.c-y{color:var(--warning)}
+
+/* Form */
+.fg{margin-bottom:12px}
+.fg label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px}
+.fg input,.fg select,.fg textarea{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;color:#1e293b;background:#fff;transition:border .15s}
+.fg input[type=date],.fg input[type=time]{direction:ltr;text-align:left}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,142,247,.1)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* Section boxes */
+.section-box{border-radius:10px;padding:14px;margin-bottom:12px;border:1.5px solid}
+.net-box{background:#f7fee7;border-color:#a3e635}
+.prog-box{background:#fdf2f8;border-color:#f9a8d4}
+.prev-box{background:#f5f7ff;border-color:#c7d2fe}
+.section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.net-box .section-label{color:#4d7c0f}
+.prog-box .section-label{color:#be185d}
+.prev-box .section-label{color:#4338ca}
+
+/* Comparison */
+.cmp-box{border-radius:12px;padding:16px;text-align:center;margin-bottom:14px;border:2px solid}
+.cmp-ok{background:#dcfce7;border-color:#86efac}
+.cmp-diff{background:#fee2e2;border-color:#fca5a5}
+.cmp-rev{background:#fef9c3;border-color:#fde047}
+.cmp-status{font-size:28px;font-weight:800;margin-bottom:6px}
+.cmp-sub{font-size:13px;color:var(--muted);margin-bottom:12px}
+.cmp-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.cmp-cell{background:rgba(255,255,255,.7);border-radius:8px;padding:10px;text-align:center}
+.cmp-cell-l{font-size:11px;color:var(--muted);margin-bottom:4px}
+.cmp-cell-v{font-size:16px;font-weight:700}
+
+/* Table */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{padding:9px 12px;color:var(--muted);font-weight:500;border-bottom:1px solid var(--border);text-align:right;background:#f8fafc;white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid #f1f5f9;text-align:right}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f8fafc}
+.tbl-wrap{overflow-x:auto}
+
+/* Badges */
+.badge{display:inline-flex;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600}
+.b-g{background:#dcfce7;color:#15803d}.b-r{background:#fee2e2;color:#b91c1c}
+.b-y{background:#fef9c3;color:#a16207}.b-b{background:#dbeafe;color:#1d4ed8}
+.b-gray{background:#f1f5f9;color:#475569}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;font-size:13px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:var(--card);color:#1e293b;font-family:inherit;transition:all .13s}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+.btn-primary:hover{background:#3b7de8}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* Alert */
+.alert{display:flex;gap:10px;padding:12px 14px;border-radius:10px;margin-bottom:8px;font-size:13px}
+.a-d{background:#fee2e2;color:#b91c1c}
+.a-w{background:#fef9c3;color:#a16207}
+.a-s{background:#dcfce7;color:#15803d}
+.a-b{background:#dbeafe;color:#1d4ed8}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:11px 20px;border-radius:10px;font-size:13px;z-index:999;display:none;min-width:200px;text-align:center}
+
+/* Empty */
+.empty{text-align:center;padding:40px;color:var(--muted)}
+.empty-icon{font-size:40px;margin-bottom:10px;opacity:.4}
+
+/* Tabs */
+.tabs{display:flex;gap:2px;border-bottom:2px solid var(--border);margin-bottom:16px}
+.tab{padding:9px 16px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;border-top:none;border-left:none;border-right:none;background:none;font-family:inherit}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+
+/* Review note */
+.review-note{background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13px;margin-top:10px}
+.review-note-label{font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:600}
+
+/* Locked overlay */
+.locked{background:#f8fafc;border:1px dashed var(--border);border-radius:10px;padding:30px;text-align:center;color:var(--muted)}
+.locked-icon{font-size:32px;margin-bottom:8px;opacity:.5}
+
+@media(max-width:640px){
+  .two{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr 1fr}
+  .form-row{grid-template-columns:1fr}
+  .cmp-grid{grid-template-columns:1fr 1fr}
+  .main{padding:12px 10px}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-logo">
+    <span>⚖️</span>
+    <div>
+      <div class="header-title">بوابة العميل</div>
+      <div class="header-sub" id="hdr-client-name">مراقب الامتثال الضريبي</div>
+    </div>
+  </div>
+  <div class="header-user">
+    <div style="text-align:left">
+      <div class="user-name" id="hdr-user-name">—</div>
+      <div class="user-role" id="hdr-user-role">—</div>
+    </div>
+    <button onclick="logout()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;padding:6px 12px;border-radius:7px;cursor:pointer;font-size:12px;font-family:inherit">خروج</button>
+  </div>
+</header>
+
+<div class="main" id="app-content">
+  <div class="empty"><div class="empty-icon">⏳</div><div>جاري التحميل...</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '';
+const TOKEN = () => localStorage.getItem('tax_token');
+const USER  = () => { try{return JSON.parse(localStorage.getItem('tax_user')||'{}')}catch{return {}} };
+
+function authH(extra={}) {
+  return {'Content-Type':'application/json','Authorization':'Bearer '+TOKEN(),...extra};
+}
+async function api(method, path, data=null) {
+  const opts = {method, headers: authH()};
+  if (data) opts.body = JSON.stringify(data);
+  const r = await fetch(API+path, opts);
+  if (r.status===401) { logout(); return {}; }
+  return r.json();
+}
+const get  = path => api('GET',path);
+const post = (path,d) => api('POST',path,d);
+const put  = (path,d) => api('PUT',path,d);
+
+function logout() { localStorage.removeItem('tax_token'); localStorage.removeItem('tax_user'); window.location.href='/login'; }
+function toast(msg,t='s'){const el=document.getElementById('toast');el.textContent=(t==='s'?'✅ ':t==='e'?'❌ ':'ℹ️ ')+msg;el.style.background=t==='s'?'#15803d':t==='e'?'#b91c1c':'#1d4ed8';el.style.display='block';setTimeout(()=>el.style.display='none',3500);}
+function fmt(n,d=2){return Number(n||0).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});}
+function fmtN(n){return Number(n||0).toLocaleString('en-US');}
+function today(){return new Date().toISOString().slice(0,10);}
+function nowT(){const n=new Date();return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;}
+function sBadge(s){const m={'متطابقة':'b-g','يوجد فرق':'b-r','تحتاج مراجعة':'b-y','pending':'b-y','approved':'b-g','rejected':'b-r','request_edit':'b-b','معلق':'b-y','مقبول':'b-g','مرفوض':'b-r','يحتاج تعديل':'b-b'};return `<span class="badge ${m[s]||'b-gray'}">${statusAr(s)}</span>`;}
+function statusAr(s){const m={pending:'معلق',approved:'مقبول',rejected:'مرفوض',request_edit:'يحتاج تعديل'};return m[s]||s;}
+
+// ══ State ══════════════════════════════════════════════════════════════════
+let portalData = null;
+let currentTab = 'new';
+let lastCalc   = null;
+let branches   = [];
+let devices    = [];
+
+// ══ Init ═══════════════════════════════════════════════════════════════════
+async function init() {
+  if (!TOKEN()) { window.location.href = '/login?redirect=/portal'; return; }
+  const u = USER();
+  document.getElementById('hdr-user-name').textContent = u.full_name || u.username || '—';
+  document.getElementById('hdr-user-role').textContent = u.role === 'client' ? 'عميل' : u.role_label || u.role;
+
+  portalData = await get('/api/portal/me');
+  if (portalData.detail) { document.getElementById('app-content').innerHTML = `<div class="card"><div class="empty"><div class="empty-icon">🔒</div><div>${portalData.detail}</div></div></div>`; return; }
+
+  const client = portalData.client;
+  if (client) document.getElementById('hdr-client-name').textContent = client.name;
+
+  // Load branches + devices if permitted
+  if (portalData.permissions?.can_view_matching !== 0) {
+    branches = await get('/api/portal/branches').catch(()=>[]) || [];
+    if (portalData.permissions?.can_view_devices) {
+      devices = await get('/api/portal/devices').catch(()=>[]) || [];
+    }
+  }
+
+  renderPortal();
+}
+
+// ══ Render ══════════════════════════════════════════════════════════════════
+function renderPortal() {
+  const p = portalData;
+  const perms = p.permissions || {};
+  const client = p.client;
+
+  // Build tabs based on permissions
+  const tabs = [];
+  if (perms.can_view_matching !== 0 || perms.can_submit_session) {
+    tabs.push({id:'new',   label:'📊 إدخال موازنة'});
+    tabs.push({id:'history', label:'📋 سجل الموازنات'});
+  }
+  if (perms.can_view_visits)     tabs.push({id:'visits',    label:'📅 الزيارات'});
+  if (perms.can_view_checklists) tabs.push({id:'checklists',label:'✅ قوائم المراجعة'});
+  if (perms.can_view_devices)    tabs.push({id:'devices',   label:'📟 الأجهزة'});
+  if (perms.can_view_banks)      tabs.push({id:'banks',     label:'🏦 البنوك'});
+
+  const pendingCount = p.stats?.pending_approvals || 0;
+
+  let html = '';
+
+  // Pending notification
+  if (pendingCount > 0) {
+    html += `<div class="status-banner sb-pending">
+      <span class="sb-icon">⏳</span>
+      <div>لديك <strong>${pendingCount}</strong> موازنة في انتظار الموافقة من المدير</div>
+    </div>`;
+  }
+
+  // Stats
+  if (client) {
+    const sessions = p.recent_sessions || [];
+    const approved = sessions.filter(s => s.approval_status === 'approved').length;
+    const diff     = sessions.filter(s => s.match_status === 'يوجد فرق').length;
+    html += `<div class="stats">
+      <div class="stat"><div class="stat-v c-b">${sessions.length}</div><div class="stat-l">إجمالي الموازنات</div></div>
+      <div class="stat"><div class="stat-v c-g">${approved}</div><div class="stat-l">مقبولة</div></div>
+      <div class="stat"><div class="stat-v c-r">${diff}</div><div class="stat-l">بها فروقات</div></div>
+    </div>`;
+  }
+
+  // Tabs
+  if (tabs.length > 1) {
+    html += `<div class="tabs" id="portal-tabs">
+      ${tabs.map(t=>`<button class="tab${t.id===currentTab?' active':''}" onclick="switchTab('${t.id}')">${t.label}</button>`).join('')}
+    </div>`;
+  }
+
+  // Tab content
+  html += `<div id="tab-content"></div>`;
+
+  document.getElementById('app-content').innerHTML = html;
+  renderTab(currentTab);
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>{if(t.onclick?.toString().includes(`'${tab}'`))t.classList.add('active');});
+  renderTab(tab);
+}
+
+async function renderTab(tab) {
+  const el = document.getElementById('tab-content');
+  if (!el) return;
+  const perms = portalData.permissions || {};
+
+  if (tab === 'new') {
+    if (!perms.can_submit_session && perms.can_submit_session !== undefined) {
+      el.innerHTML = `<div class="locked"><div class="locked-icon">🔒</div><div>ليس لديك صلاحية رفع الموازنات</div></div>`;
+      return;
+    }
+    renderNewSessionForm(el);
+  }
+  else if (tab === 'history') {
+    const sessions = await get('/api/portal/sessions').catch(()=>[]) || [];
+    renderHistory(el, sessions);
+  }
+  else if (tab === 'devices') {
+    const devs = await get('/api/portal/devices').catch(()=>[]) || [];
+    renderDevices(el, devs);
+  }
+  else {
+    el.innerHTML = `<div class="locked"><div class="locked-icon">🔒</div><div>هذا القسم غير متاح حالياً</div></div>`;
+  }
+}
+
+// ══ New Session Form ════════════════════════════════════════════════════════
+function renderNewSessionForm(el) {
+  const brOpts = branches.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
+  const devOpts = devices.map(d=>`<option value="${d.id}">${d.device_uid ? d.device_uid+' — ':'' }${d.name}</option>`).join('');
+
+  el.innerHTML = `
+    <div class="two" style="align-items:start">
+      <div>
+        <!-- Previous balance (auto-filled) -->
+        <div class="card">
+          <div class="prev-box">
+            <div class="section-label">🕐 الموازنة السابقة</div>
+            <div id="prev-hint" style="font-size:12px;color:#4338ca;margin-bottom:10px;display:none"></div>
+            <div class="form-row">
+              <div class="fg" style="margin:0"><label>تاريخ البداية</label><input type="date" id="prev-date"></div>
+              <div class="fg" style="margin:0"><label>وقت البداية</label><input type="time" id="prev-time" step="1"></div>
+            </div>
+            <div class="form-row" style="margin-top:10px">
+              <div class="fg" style="margin:0"><label>عدد العمليات السابقة</label><input type="number" id="prev-count" min="0" placeholder="0"></div>
+              <div class="fg" style="margin:0"><label>المبلغ السابق ر.س</label><input type="number" id="prev-amount" min="0" step="0.01" placeholder="0.00"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Network data -->
+        <div class="card">
+          <div class="net-box">
+            <div class="section-label">🌐 بيانات الشبكة — الموازنة الحالية</div>
+            <div class="form-row">
+              <div class="fg" style="margin:0"><label>تاريخ الموازنة</label><input type="date" id="curr-date" value="${today()}"></div>
+              <div class="fg" style="margin:0">
+                <label>الوقت <button type="button" onclick="setNow()" style="font-size:10px;padding:1px 7px;border:1px solid #d1fae5;border-radius:4px;cursor:pointer;background:#fff;margin-right:4px;color:#15803d">الآن ⏱</button></label>
+                <input type="time" id="curr-time" step="1" value="${nowT()}">
+              </div>
+            </div>
+            <div class="form-row" style="margin-top:10px">
+              <div class="fg" style="margin:0"><label>عدد العمليات</label><input type="number" id="net-count" min="0" placeholder="0" oninput="liveCalc()"></div>
+              <div class="fg" style="margin:0"><label>إجمالي المبلغ ر.س</label><input type="number" id="net-amount" min="0" step="0.01" placeholder="0.00" oninput="liveCalc()"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Program data -->
+        <div class="card">
+          <div class="prog-box">
+            <div class="section-label">💻 بيانات البرنامج</div>
+            <div class="form-row">
+              <div class="fg" style="margin:0"><label>عدد الفواتير</label><input type="number" id="prog-count" min="0" placeholder="0" oninput="liveCalc()"></div>
+              <div class="fg" style="margin:0"><label>إجمالي مبلغ الفواتير ر.س</label><input type="number" id="prog-amount" min="0" step="0.01" placeholder="0.00" oninput="liveCalc()"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Branch / Device -->
+        ${brOpts ? `<div class="card">
+          <div class="form-row">
+            <div class="fg" style="margin:0"><label>الفرع</label><select id="s-branch"><option value="">— بدون —</option>${brOpts}</select></div>
+            ${devOpts ? `<div class="fg" style="margin:0"><label>الجهاز</label><select id="s-device"><option value="">— بدون —</option>${devOpts}</select></div>` : ''}
+          </div>
+        </div>` : ''}
+
+        <div class="card">
+          <div class="fg"><label>ملاحظات</label><textarea id="s-notes" rows="2" placeholder="أي ملاحظات تريد إضافتها..."></textarea></div>
+          <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px" onclick="submitSession()">
+            📤 إرسال الموازنة للمدير
+          </button>
+        </div>
+      </div>
+
+      <!-- Live preview -->
+      <div id="live-preview">
+        <div class="card" style="text-align:center;padding:32px">
+          <div style="font-size:40px;opacity:.3;margin-bottom:10px">⚖️</div>
+          <div style="font-size:13px;color:var(--muted)">أدخل أرقام الشبكة والبرنامج لرؤية نتيجة المطابقة</div>
+        </div>
+      </div>
+    </div>`;
+
+  // Auto-fetch last session
+  fetchLastSession();
+}
+
+async function fetchLastSession() {
+  const r = await get('/api/portal/me');
+  const sessions = r.recent_sessions || [];
+  if (sessions.length > 0) {
+    const last = sessions[0];
+    document.getElementById('prev-date').value  = last.curr_date || '';
+    document.getElementById('prev-time').value  = last.curr_time || '';
+    document.getElementById('prev-count').value = last.net_tx_count || '';
+    document.getElementById('prev-amount').value= last.net_tx_amount || '';
+    const hint = document.getElementById('prev-hint');
+    if (hint) {
+      hint.style.display = 'block';
+      hint.textContent = `✅ تم جلب آخر موازنة بتاريخ ${last.curr_date} تلقائياً`;
+    }
+  }
+}
+
+function setNow() {
+  document.getElementById('curr-time').value = nowT();
+  document.getElementById('curr-date').value = today();
+}
+
+function liveCalc() {
+  const netC  = parseInt(document.getElementById('net-count').value)   || 0;
+  const netA  = parseFloat(document.getElementById('net-amount').value) || 0;
+  const progC = parseInt(document.getElementById('prog-count').value)   || 0;
+  const progA = parseFloat(document.getElementById('prog-amount').value)|| 0;
+  if (!netC && !netA && !progC && !progA) return;
+
+  const diffC = netC - progC;
+  const diffA = Math.round((netA - progA)*100)/100;
+  let status, cls, color;
+  if (diffC===0 && Math.abs(diffA)<0.01) { status='متطابقة'; cls='cmp-ok'; color='#15803d'; }
+  else if (Math.abs(diffC)<=2 && Math.abs(diffA)<=100) { status='تحتاج مراجعة'; cls='cmp-rev'; color='#a16207'; }
+  else { status='يوجد فرق'; cls='cmp-diff'; color='#b91c1c'; }
+
+  const pct = netC>0 ? Math.round((1-Math.abs(diffC)/Math.max(netC,1))*100) : 100;
+  lastCalc = {netC,netA,progC,progA,diffC,diffA,status};
+
+  document.getElementById('live-preview').innerHTML = `
+    <div class="${cls} cmp-box" style="border:2px solid">
+      <div class="cmp-status" style="color:${color}">${status==='متطابقة'?'✅ متطابقة':status==='يوجد فرق'?'❌ يوجد فرق':'⚠️ تحتاج مراجعة'}</div>
+      <div class="cmp-sub">نسبة التطابق: <strong style="color:${color}">${pct}%</strong></div>
+      <div class="cmp-grid">
+        <div class="cmp-cell"><div class="cmp-cell-l">عمليات الشبكة</div><div class="cmp-cell-v">${fmtN(netC)}</div></div>
+        <div class="cmp-cell"><div class="cmp-cell-l">فواتير البرنامج</div><div class="cmp-cell-v">${fmtN(progC)}</div></div>
+        <div class="cmp-cell"><div class="cmp-cell-l">فرق العمليات</div><div class="cmp-cell-v" style="color:${diffC===0?'#15803d':'#b91c1c'}">${diffC>=0?'+':''}${fmtN(diffC)}</div></div>
+        <div class="cmp-cell"><div class="cmp-cell-l">مبلغ الشبكة</div><div class="cmp-cell-v">${fmt(netA)}</div></div>
+        <div class="cmp-cell"><div class="cmp-cell-l">مبلغ البرنامج</div><div class="cmp-cell-v">${fmt(progA)}</div></div>
+        <div class="cmp-cell"><div class="cmp-cell-l">فرق المبلغ</div><div class="cmp-cell-v" style="color:${Math.abs(diffA)<0.01?'#15803d':'#b91c1c'}">${diffA>=0?'+':''}${fmt(diffA)}</div></div>
+      </div>
+    </div>
+    <div class="card" style="font-size:12px;color:var(--muted)">
+      ℹ️ ستُرسل هذه الموازنة للمدير للمراجعة والموافقة عليها
+    </div>`;
+}
+
+async function submitSession() {
+  const currDate = document.getElementById('curr-date').value;
+  const currTime = document.getElementById('curr-time').value;
+  const prevDate = document.getElementById('prev-date').value;
+  const prevTime = document.getElementById('prev-time').value;
+  if (!currDate||!currTime) { toast('أدخل تاريخ ووقت الموازنة الحالية','e'); return; }
+  if (!prevDate||!prevTime) { toast('أدخل تاريخ ووقت الموازنة السابقة','e'); return; }
+
+  const netC  = parseInt(document.getElementById('net-count').value)    || 0;
+  const netA  = parseFloat(document.getElementById('net-amount').value)  || 0;
+  const progC = parseInt(document.getElementById('prog-count').value)    || 0;
+  const progA = parseFloat(document.getElementById('prog-amount').value) || 0;
+  if (!netC && !netA) { toast('أدخل بيانات الشبكة أولاً','e'); return; }
+
+  const brEl  = document.getElementById('s-branch');
+  const devEl = document.getElementById('s-device');
+
+  const btn = document.querySelector('button.btn-primary');
+  btn.disabled = true;
+  btn.textContent = '⏳ جاري الإرسال...';
+
+  const r = await post('/api/portal/sessions', {
+    branch_id:      brEl  ? (brEl.value  || null) : null,
+    device_id:      devEl ? (devEl.value || null) : null,
+    prev_date: prevDate, prev_time: prevTime,
+    prev_net_count:  parseInt(document.getElementById('prev-count').value)  || 0,
+    prev_net_amount: parseFloat(document.getElementById('prev-amount').value)|| 0,
+    curr_date: currDate, curr_time: currTime,
+    net_tx_count: netC, net_tx_amount: netA,
+    prog_inv_count: progC, prog_inv_amount: progA,
+    client_notes: document.getElementById('s-notes').value,
+  });
+
+  if (r.detail) { toast(r.detail,'e'); btn.disabled=false; btn.textContent='📤 إرسال الموازنة للمدير'; return; }
+
+  toast('تم إرسال الموازنة بنجاح — في انتظار الموافقة');
+  // Refresh portal data
+  portalData = await get('/api/portal/me');
+  currentTab = 'history';
+  renderPortal();
+}
+
+// ══ History ═════════════════════════════════════════════════════════════════
+function renderHistory(el, sessions) {
+  if (!sessions.length) {
+    el.innerHTML = `<div class="card"><div class="empty"><div class="empty-icon">📋</div><div>لا توجد موازنات بعد</div></div></div>`;
+    return;
+  }
+
+  // Show last approval notification if any
+  const lastS = sessions[0];
+  if (lastS.approval_status && lastS.approval_status !== 'pending') {
+    const bannerCls = {approved:'sb-approved',rejected:'sb-rejected',request_edit:'sb-edit'}[lastS.approval_status]||'sb-pending';
+    const bannerIcon = {approved:'✅',rejected:'❌',request_edit:'✏️'}[lastS.approval_status]||'⏳';
+    el.innerHTML = `<div class="status-banner ${bannerCls}">
+      <span class="sb-icon">${bannerIcon}</span>
+      <div>آخر موازنة: <strong>${statusAr(lastS.approval_status)}</strong>
+      ${lastS.reviewer_notes ? ` — ملاحظة المدير: ${lastS.reviewer_notes}` : ''}
+      </div>
+    </div>`;
+  } else {
+    el.innerHTML = '';
+  }
+
+  el.innerHTML += `<div class="card">
+    <div class="card-title">📋 سجل الموازنات</div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>من</th><th>إلى</th><th>شبكة</th><th>برنامج</th><th>الفرق</th><th>المطابقة</th><th>حالة الطلب</th><th>ملاحظة المدير</th></tr></thead>
+      <tbody>${sessions.map(s=>{
+        const diffC = s.net_tx_count - s.prog_inv_count;
+        const diffA = (s.net_tx_amount||0)-(s.prog_inv_amount||0);
+        const apStatus = s.approval_status || 'pending';
+        return `<tr>
+          <td style="font-size:11px;white-space:nowrap">${s.prev_date||'—'}<br><span style="color:var(--muted)">${s.prev_time||''}</span></td>
+          <td style="font-size:11px;white-space:nowrap">${s.curr_date}<br><span style="color:var(--muted)">${s.curr_time}</span></td>
+          <td style="text-align:center">${fmtN(s.net_tx_count)}<br><span style="font-size:11px;color:var(--muted)">${fmt(s.net_tx_amount)} ر.س</span></td>
+          <td style="text-align:center">${fmtN(s.prog_inv_count)}<br><span style="font-size:11px;color:var(--muted)">${fmt(s.prog_inv_amount)} ر.س</span></td>
+          <td style="text-align:center;font-weight:700;color:${diffC===0?'#15803d':'#b91c1c'}">${diffC>=0?'+':''}${fmtN(diffC)}<br><span style="font-size:11px">${diffA>=0?'+':''}${fmt(diffA)}</span></td>
+          <td>${sBadge(s.match_status)}</td>
+          <td>${sBadge(apStatus)}</td>
+          <td style="font-size:12px;color:var(--muted);max-width:160px">${s.reviewer_notes||'—'}</td>
+        </tr>`;}).join('')}
+      </tbody>
+    </table></div>
+  </div>`;
+}
+
+// ══ Devices ══════════════════════════════════════════════════════════════════
+function renderDevices(el, devs) {
+  if (!devs.length) {
+    el.innerHTML = `<div class="card"><div class="empty"><div class="empty-icon">📟</div><div>لا توجد أجهزة مسجلة</div></div></div>`;
+    return;
+  }
+  el.innerHTML = `<div class="card">
+    <div class="card-title">📟 الأجهزة المرتبطة</div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>رقم الجهاز</th><th>الاسم</th><th>النوع</th><th>الفرع</th><th>الحساب البنكي</th><th>الموقع</th><th>الحالة</th></tr></thead>
+      <tbody>${devs.map(d=>`<tr>
+        <td style="font-family:monospace;font-size:12px">${d.device_uid||'—'}</td>
+        <td><strong>${d.name}</strong></td>
+        <td><span class="badge b-b">${d.type}</span></td>
+        <td>${d.branch_name||'—'}</td>
+        <td>${d.bank_name||'—'}</td>
+        <td>${d.location||'—'}</td>
+        <td>${sBadge(d.status)}</td>
+      </tr>`).join('')}
+      </tbody>
+    </table></div>
+  </div>`;
+}
+
+// ══ Start ════════════════════════════════════════════════════════════════════
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>تسجيل الدخول — مراقب الامتثال الضريبي</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;direction:rtl;background:linear-gradient(135deg,#1a1a2e 0%,#162032 50%,#1a1a2e 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.container{width:100%;max-width:420px}
+.logo-area{text-align:center;margin-bottom:32px}
+.logo-icon{font-size:48px;margin-bottom:10px}
+.logo-t{font-size:22px;font-weight:700;color:#fff;margin-bottom:4px}
+.logo-s{font-size:13px;color:#93c5fd}
+.card{background:#fff;border-radius:16px;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.card-title{font-size:18px;font-weight:700;color:#1a1a2e;margin-bottom:6px}
+.card-sub{font-size:13px;color:#64748b;margin-bottom:24px}
+.fg{margin-bottom:16px}
+.fg label{display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:6px}
+.fg input{width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;color:#1e293b;background:#f8fafc;transition:all .15s;font-family:inherit}
+.fg input:focus{outline:none;border-color:#4f8ef7;background:#fff;box-shadow:0 0 0 3px rgba(79,142,247,.12)}
+.fg .password-wrap{position:relative}
+.fg .password-wrap input{padding-left:44px}
+.fg .eye-btn{position:absolute;left:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:16px;padding:4px}
+.btn-login{width:100%;padding:13px;background:#4f8ef7;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit;margin-top:4px}
+.btn-login:hover{background:#3b7de8;transform:translateY(-1px);box-shadow:0 4px 14px rgba(79,142,247,.4)}
+.btn-login:active{transform:translateY(0)}
+.btn-login:disabled{background:#94a3b8;cursor:not-allowed;transform:none;box-shadow:none}
+.error-msg{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;display:none}
+.error-msg.show{display:block}
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-left:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.divider{text-align:center;margin:20px 0;position:relative}
+.divider::before{content:'';position:absolute;top:50%;right:0;left:0;height:1px;background:#e2e8f0}
+.divider span{background:#fff;padding:0 12px;font-size:12px;color:#94a3b8;position:relative}
+.hint-box{background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px 14px;font-size:12px;color:#0369a1;line-height:1.8}
+.hint-box strong{font-weight:700}
+.footer-text{text-align:center;margin-top:20px;font-size:11px;color:#64748b;opacity:.7}
+@media(max-width:440px){.card{padding:22px 18px}.logo-icon{font-size:36px}.logo-t{font-size:18px}}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="logo-area">
+    <div class="logo-icon">⚖️</div>
+    <div class="logo-t">مراقب الامتثال الضريبي</div>
+    <div class="logo-s">نظام المراجعة الضريبية المتكامل</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">تسجيل الدخول</div>
+    <div class="card-sub">أدخل بيانات حسابك للمتابعة</div>
+
+    <div class="error-msg" id="error-msg"></div>
+
+    <div class="fg">
+      <label>اسم المستخدم</label>
+      <input type="text" id="username" placeholder="اسم المستخدم" autocomplete="username" autofocus>
+    </div>
+    <div class="fg">
+      <label>كلمة المرور</label>
+      <div class="password-wrap">
+        <input type="password" id="password" placeholder="كلمة المرور" autocomplete="current-password"
+               onkeydown="if(event.key==='Enter')doLogin()">
+        <button class="eye-btn" onclick="togglePassword()" type="button" id="eye-btn">👁</button>
+      </div>
+    </div>
+
+    <button class="btn-login" id="login-btn" onclick="doLogin()">دخول</button>
+
+    <div class="divider"><span>الحسابات الافتراضية</span></div>
+    <div class="hint-box">
+      <strong>مدير:</strong> admin / Admin@2026<br>
+      <strong>مراجع:</strong> reviewer / Review@2026<br>
+      <strong>مشاهد:</strong> viewer / View@2026<br>
+      <span style="color:#0c4a6e;font-size:11px">⚠️ غيّر كلمات المرور بعد أول دخول</span>
+    </div>
+  </div>
+
+  <div class="footer-text">جميع الحقوق محفوظة © 2026</div>
+</div>
+
+<script>
+const API = '';
+
+function togglePassword() {
+  const inp = document.getElementById('password');
+  const btn = document.getElementById('eye-btn');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-msg');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+function hideError() {
+  document.getElementById('error-msg').classList.remove('show');
+}
+
+async function doLogin() {
+  hideError();
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  const btn = document.getElementById('login-btn');
+
+  if (!username || !password) {
+    showError('يرجى إدخال اسم المستخدم وكلمة المرور');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = 'جاري التحقق... <span class="spinner"></span>';
+
+  try {
+    const res = await fetch(API + '/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      showError(data.detail || 'خطأ في تسجيل الدخول');
+      btn.disabled = false;
+      btn.textContent = 'دخول';
+      return;
+    }
+
+    // Save token and user info
+    localStorage.setItem('tax_token', data.access_token);
+    localStorage.setItem('tax_user', JSON.stringify(data.user));
+
+    // Redirect based on role
+    const role = data.user.role;
+    if (role === 'client') {
+      window.location.href = '/portal';
+    } else {
+      const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
+      window.location.href = redirect;
+    }
+
+  } catch (err) {
+    showError('تعذر الاتصال بالخادم — تحقق من الاتصال بالإنترنت');
+    btn.disabled = false;
+    btn.textContent = 'دخول';
+  }
+}
+
+// If already logged in, redirect
+const existing = localStorage.getItem('tax_token');
+if (existing) {
+  // Verify token is still valid
+  fetch(API + '/api/auth/me', {
+    headers: { 'Authorization': 'Bearer ' + existing }
+  }).then(r => {
+    if (r.ok) window.location.href = '/';
+  }).catch(() => {
+    localStorage.removeItem('tax_token');
+    localStorage.removeItem('tax_user');
+  });
+}
+</script>
+</body>
+</html>
